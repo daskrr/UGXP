@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33815.320
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UGXP", "UGXP.csproj", "{37C79937-769E-4050-8B03-8E390EE32049}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5A690CFA-27BF-438B-9DEC-C84BAC0C3C49}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		GLFW.LICENCE.TXT = GLFW.LICENCE.TXT
+		GLFW.NET.LICENCE.TXT = GLFW.NET.LICENCE.TXT
+		nFMOD.LICENCE.TXT = nFMOD.LICENCE.TXT
+		SOLOUD.LICENCE.TXT = SOLOUD.LICENCE.TXT
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{37C79937-769E-4050-8B03-8E390EE32049}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{37C79937-769E-4050-8B03-8E390EE32049}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{37C79937-769E-4050-8B03-8E390EE32049}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{37C79937-769E-4050-8B03-8E390EE32049}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {027DA32C-B294-4F6F-8C9E-2EF40F30165B}
+	EndGlobalSection
+EndGlobal
