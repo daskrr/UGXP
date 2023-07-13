@@ -4,17 +4,24 @@ namespace UGXP {
     public class Vector2 : IEquatable<Vector2>
     {
         // statics
-        public static readonly Vector2 down = new(0, -1);
-        public static readonly Vector2 left = new(-1, 0);
-        public static readonly Vector2 negativeInfinity = new(float.NegativeInfinity, float.NegativeInfinity);
-        public static readonly Vector2 one =  new(1, 1);
-        public static readonly Vector2 positiveInfinity = new(float.PositiveInfinity, float.PositiveInfinity);
-        public static readonly Vector2 right = new(1, 0);
-        public static readonly Vector2 up = new(0, 1);
-        public static readonly Vector2 zero = new(0, 0);
+        public static Vector2 down => new(0, -1);
+        public static Vector2 left => new(-1, 0);
+        public static Vector2 negativeInfinity => new(float.NegativeInfinity, float.NegativeInfinity);
+        public static Vector2 one =>  new(1, 1);
+        public static Vector2 minusOne =>  new(-1, -1);
+        public static Vector2 positiveInfinity => new(float.PositiveInfinity, float.PositiveInfinity);
+        public static Vector2 right => new(1, 0);
+        public static Vector2 up => new(0, 1);
+        public static Vector2 zero => new(0, 0);
 
         public float x = 0f;
         public float y = 0f;
+
+        /// <summary>
+        /// Internally used and passed to conversion methods (to TK vectors).<br/>
+        /// IMPORTANT: It is not processed by any method and is virtually non existent for this object!
+        /// </summary>
+        internal float z = 0f;
 
         /// <summary>
         /// Access the <see cref="x"/> or <see cref="y"/> component using [0] or [1] respectively.
@@ -106,6 +113,37 @@ namespace UGXP {
             return this;
         }
 
+        /// <summary>
+        /// Clamps the x and y of this vector between 0 and 1
+        /// </summary>
+        /// <returns></returns>
+        public Vector2 Clamp01() {
+            x = Mathf.Clamp01(x);
+            y = Mathf.Clamp01(y);
+            return this;
+        }
+
+        internal OpenTK.Mathematics.Vector2 ToTKVec2() {
+            return new OpenTK.Mathematics.Vector2(x, y);
+        }
+        internal OpenTK.Mathematics.Vector2i ToTKVec2i() {
+            return new OpenTK.Mathematics.Vector2i((int) x, (int) y);
+        }
+
+        internal OpenTK.Mathematics.Vector3 ToTKVec3() {
+            return new OpenTK.Mathematics.Vector3(x, y, z);
+        }
+        internal OpenTK.Mathematics.Vector3 ToTKVec3i() {
+            return new OpenTK.Mathematics.Vector3i((int) x, (int) y, (int) z);
+        }
+
+        internal OpenTK.Mathematics.Vector4 ToTKVec4() {
+            return new OpenTK.Mathematics.Vector4(x, y, z, 1f);
+        }
+        internal OpenTK.Mathematics.Vector4 ToTKVec4i() {
+            return new OpenTK.Mathematics.Vector4i((int) x, (int) y, (int) z, 1);
+        }
+
         // overrides
 
         public override bool Equals(object? obj) {
@@ -127,6 +165,14 @@ namespace UGXP {
 
         public override int GetHashCode() {
             return x.GetHashCode() ^ (y.GetHashCode() << 2);
+        }
+
+        /// <summary>
+        /// Clones this vector2, making a new instance of Vector2.<br/>
+        /// </summary>
+        /// <returns>A new instance of Vector2 with the same x, y coordinates</returns>
+        public Vector2 Clone() {
+            return new Vector2(x, y);
         }
 
         // check operators
@@ -163,17 +209,29 @@ namespace UGXP {
         public static Vector2 operator +(Vector2 v1, Vector2 v2) {
             return new(v1.x + v2.x, v1.y + v2.y);
         }
+        public static Vector2 operator +(Vector2 v1, float f) {
+            return new(v1.x + f, v1.y + f);
+        }
 
         public static Vector2 operator -(Vector2 v1, Vector2 v2) {
             return new(v1.x - v2.x, v1.y - v2.y);
+        }
+        public static Vector2 operator -(Vector2 v1, float f) {
+            return new(v1.x - f, v1.y - f);
         }
 
         public static Vector2 operator *(Vector2 v1, Vector2 v2) {
             return new(v1.x * v2.x, v1.y * v2.y);
         }
+        public static Vector2 operator *(Vector2 v1, float f) {
+            return new(v1.x * f, v1.y * f);
+        }
 
         public static Vector2 operator /(Vector2 v1, Vector2 v2) {
             return new(v1.x / v2.x, v1.y / v2.y);
+        }
+        public static Vector2 operator /(Vector2 v1, float f) {
+            return new(v1.x / f, v1.y / f);
         }
 
         //public static implicit operator Vector2(Vector3 v3) { }

@@ -1,13 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UGXP.Core.Components;
+﻿using UGXP.Core.Components;
 
 namespace UGXP.Core;
 public interface IComponentHolder
 {
+
+    /// <summary>
+    /// Adds the initial components to a game object from its structure.
+    /// </summary>
+    /// <param name="components">The components to be added</param>
+    /// <returns>The added components</returns>
+    public void InitialAddComponents(LazyComponent[] components);
+
+    /// <summary>
+    /// Adds an already existing array of component instances to this game object.
+    /// </summary>
+    /// <param name="components">The components to be added</param>
+    /// <returns>The added components</returns>
+    public Component[] AddComponents(Component[] components);
     /// <summary>
     /// Adds an already existing component instance to this game object.
     /// </summary>
@@ -20,6 +29,12 @@ public interface IComponentHolder
     /// <param name="component">The component type to be created</param>
     /// <returns>The added component</returns>
     public Component AddComponent(Type component);
+    /// <summary>
+    /// Adds a list of new components to this game object.
+    /// </summary>
+    /// <param name="components">The components' types to be created</param>
+    /// <returns>The added components</returns>
+    public Component[] AddComponents(Type[] components);
     /// <summary>
     /// Adds a new component to this game object.
     /// </summary>
@@ -89,4 +104,13 @@ public interface IComponentHolder
     /// <typeparam name="T">The component type</typeparam>
     /// <returns>The components of type</returns>
     public T[] GetComponents<T>() where T : Component;
+
+    /// <summary>
+    /// Invokes the Awake method (If present) from all components in this holder.
+    /// </summary>
+    public void AwakeComponents();
+    /// <summary>
+    /// Invokes the Start method (If present) from all components in this holder.
+    /// </summary>
+    public void StartComponents();
 }

@@ -1,17 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UGXP.Core;
+﻿using UGXP.Core;
 
 namespace UGXP.Game.Manager;
 
 public class GameObjectManager
 {
     private static GameObjectManager Instance = null;
-
-    private List<GameObject> gameObjects = new();
 
     internal GameObjectManager() {
         if (Instance != null)
@@ -22,18 +15,33 @@ public class GameObjectManager
 
     // make these be out of sync so the game doesn t break due to missing objects
     public static void Subscribe(GameObject obj) {
-        Instance._subscribe(obj);
+        if (!obj || !obj.active) return;
+
+        // check so that we only subscribe the object if it wasn't subscribed already
+        if (!obj.isSubscribed) {
+            GameProcess.Main.updateManager.Add(obj);
+            GameProcess.Main.renderManager.Add(obj);
+            obj.isSubscribed = true;
+        }
+
+        // still try to subscribe the children
+        foreach (var child in obj)
+            Subscribe(child);
+    }
+    public static void Update(GameObject obj) {
+        GameProcess.Main.updateManager.Update(obj);
+        GameProcess.Main.renderManager.Update(obj);
+
+        foreach (var child in obj)
+            Update(child);
     }
     public static void Unsubscribe(GameObject obj) {
-        Instance._unsubscribe(obj);
-    }
+        GameProcess.Main.updateManager.Remove(obj);
+        GameProcess.Main.renderManager.Remove(obj);
 
-    private void _subscribe(GameObject obj) {
-        GameProcess.Main.updateManager.Add(obj); // change to Game.Main.Managers something
-        gameObjects.Add(obj);
-    }
-    private void _unsubscribe(GameObject obj) {
-        GameProcess.Main.updateManager.Remove(obj); // change to Game.Main.Managers something
-        gameObjects.Add(obj);
+        obj.isSubscribed = false;
+
+        foreach (var child in obj)
+            Unsubscribe(child);
     }
 }

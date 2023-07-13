@@ -9,9 +9,25 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Core\Render\Shaders\defaultFrag.shader" />
+    <None Remove="Core\Render\Shaders\defaultVertex.shader" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Core\Render\Shaders\defaultFrag.shader" />
+    <EmbeddedResource Include="Core\Render\Shaders\defaultVertex.shader" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="glfw" Version="3.3.8" />
     <PackageReference Include="glfw-net" Version="3.3.1" />
+    <PackageReference Include="OpenTK" Version="4.7.7" />
+    <PackageReference Include="StbImageSharp" Version="2.27.13" />
     <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Util\Extension\" />
   </ItemGroup>
 
 </Project>

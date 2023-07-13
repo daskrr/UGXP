@@ -1,38 +1,50 @@
-﻿using System;
+﻿using OpenTK.Mathematics;
 using System.Collections;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Reflection;
 using UGXP.Core.Components;
+using UGXP.Game;
 using UGXP.Game.Manager;
 using UGXP.Reference;
-using Component = UGXP.Core.Components.Component;
+using UGXP.Util;
 
 namespace UGXP.Core;
 
+/// <summary>
+/// The game object is the building block of a game. This object can be used as many times as needed inside a scene.<br/>
+/// The game object can contain components which give it functionality and make it behave in any desired way.
+/// </summary>
 public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, IList<GameObject>
 {
     public string name;
-    public string tag;
-    public int layerId = -1;
+    public string tag = null;
 
+    public int layerId = -1;
     public string layer {
-        get {
-            return "";
-            // return LayerMask.IdToName(this.layerId)
-        }
+        get => LayerMask.IdToName(layerId);
     }
 
     private string? referenceName;
     private ObjectReference<GameObject> reference;
 
-    public Transform transform = new();
-    protected GameObject parent = null;
+    private Transform _transform;
+    public Transform transform {
+        get {
+            return _transform;
+        }
+        set {
+            value.gameObject = this;
+            _transform = value;
+        }
+    }
+
+    internal GameObject parent = null;
     protected List<GameObject> children = new();
 
     protected List<Component> components = new();
+
+    internal Renderer renderer;
+
+    private readonly GameObjectStructure structure;
 
     /// <summary>
     /// Dynamically creates a game object with no properties
@@ -40,6 +52,12 @@ public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, 
     /// <param name="name"></param>
     internal GameObject(string name) { 
         this.name = name;
+        this.transform = new();
+
+        // create a reference for the first time when object is initialized.
+        _ = GetReference();
+
+        Awake();
     }
 
     /// <summary>
@@ -47,22 +65,95 @@ public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, 
     /// </summary>
     /// <param name="structure">the data structure</param>
     internal GameObject(GameObjectStructure structure) {
-        this.name = structure.Name;
-        this.referenceName = structure.ReferenceName;
-        //this.layerId = LayerMask.NameToId(structure.LayerName);
-        this.tag = structure.Tag;
-        this.transform = structure.Transform;
-        this.components.AddRange(structure.Components);
+        this.structure = structure;
 
-        Array.ForEach(structure.Children, childStruct => this.children.Add(new(childStruct.Name) { parent = this }) );
+        // set name before making the reference
+        this.referenceName = structure.ReferenceName;
+        // create a reference for the first time when object is initialized.
+        _ = GetReference();
+
+        this.name = structure.Name;
+        this.layerId = LayerMask.NameToId(structure.LayerName);
+        this.tag = structure.Tag;
+        this.transform = structure.Transform.Clone() ?? new Transform();
+        InitialAddComponents(structure.Components);
+
+        if (structure.Children.Length > 0)
+            Array.ForEach(structure.Children, childStruct => this.children.Add(new(childStruct) { parent = this }) );
+
+        Awake();
+    }
+
+    private void Awake() {
+        if (tag != null)
+            RegisterGameObjectTag(this);
+
+        AwakeComponents();
+    }
+
+    /// <summary>
+    /// Gets the scene of this game object.
+    /// Recursively goes back through the hierarchy to find the scene.
+    /// This method can be expensive the first time it is ran. Use with caution!
+    /// </summary>
+    /// <returns>The scene containing this game object or null</returns>
+    public Scene? GetScene() {
+        if (parent == null && this is Scene scene)
+            return scene;
+        else if (parent == null)
+            return null;
+
+        return parent.GetScene();
     }
 
     public ObjectReference<GameObject> GetReference() {
-        throw new NotImplementedException();
-
         // if referenceName is null, the reference will be created only internally (just id)
-        //reference ??= ReferenceManager.Create<GameObject>(referenceName, this);
-        // return reference;
+        reference ??= ReferenceManager.Create<GameObject>(referenceName, this);
+        return reference;
+    }
+
+    public GameObject Clone() {
+        if (structure != null)
+            return new GameObject(structure);
+        else
+            return new GameObject(name);
+    }
+
+    public override void SetActive(bool active) {
+        base.SetActive(active);
+
+        if (active)
+            GameObjectManager.Subscribe(this);
+        else
+            GameObjectManager.Unsubscribe(this);
+    }
+
+    /// <summary>
+    /// Compares this game object's tag against another.
+    /// </summary>
+    /// <param name="otherTag">The tag to compare against</param>
+    /// <returns>A bool representing if the tags are equal or not</returns>
+    public bool CompareTag(string otherTag) {
+        return tag == otherTag;
+    }
+
+    public override void OnDestroy() {
+        if (tag != null)
+            RemoveGameObjectTag(this);
+
+        // destroy the components of this object
+        foreach (var comp in GetComponents())
+            Destroy(comp);
+
+        // destroy all children and their components
+        foreach (var child in this) {
+            foreach (var comp in child.GetComponents())
+                Destroy(comp);
+
+            Destroy(child);
+        }
+
+        ReferenceManager.RemoveReference(reference.id);
     }
 
     #region GameObject fields
@@ -105,26 +196,124 @@ public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, 
     #endregion
 
     #region GameObject internal functionality
+    // this is handled by the GameObjectManager
+    internal bool isSubscribed = false;
     internal void Subscribe() {
+        // unsubscribe game object if it's already subscribed
+        // removed: there is no reason to unsubscribe the object and re-subscribe it
+        //if (isSubscribed) Unsubscribe();
+
         GameObjectManager.Subscribe(this);
-        foreach (var child in this)
-            child.Subscribe();
+        // the game object manager already subscribes the children
+        //foreach (var child in this)
+        //    child.Subscribe();
     }
 
     internal void Unsubscribe() {
         GameObjectManager.Unsubscribe(this);
-        foreach (var child in this)
-            child.Unsubscribe();
+        // the game object manager already unsubscribes the children
+        //foreach (var child in this)
+        //    child.Unsubscribe();
     }
     #endregion
 
+    #region static methods & fields
+
+    private static HashSet<string> tags = new();
+    private static Dictionary<string, List<GameObject>> linkTags = new();
+
+    /// <summary>
+    /// Register tags from the game settings to the game object for easier accessibility.
+    /// </summary>
+    /// <param name="tags">The tags to register</param>
+    internal static void RegisterTags(HashSet<string> tags) {
+        GameObject.tags = tags;
+        foreach (var tag in tags)
+            linkTags.Add(tag, new List<GameObject>());
+    }
+
+    private static bool CheckTag(string tag) {
+        return tags.Contains(tag);
+    }
+
+    private static void RegisterGameObjectTag(GameObject obj) {
+        if (obj.tag == null) return;
+        if (!CheckTag(obj.tag)) return;
+        if (linkTags[obj.tag].Contains(obj)) return;
+
+        linkTags[obj.tag].Add(obj);
+    }
+
+    private static void RemoveGameObjectTag(GameObject obj) {
+        if (obj.tag == null) return;
+        if (!CheckTag(obj.tag)) return;
+
+        linkTags[obj.tag].Remove(obj);
+    }
+
+    /// <summary>
+    /// Looks for and gives the first game object with the specified tag.<br/>
+    /// </summary>
+    /// <param name="tag">The tag of the object to look for</param>
+    /// <returns>The first object with <i>tag</i> or null.</returns>
+    public static GameObject FindGameObjectWithTag(string tag) {
+        if (linkTags[tag].Count == 0) return null;
+
+        GameObject[] objs = FindGameObjectsWithTag(tag);
+        if (objs.Length == 0) return null;
+
+        return objs[0];
+    }
+
+    public static GameObject[] FindGameObjectsWithTag(string tag) {
+        if (!CheckTag(tag))
+            throw new ArgumentOutOfRangeException(nameof(tag), "The provided tag does not exist. Make sure it exists in the Tags from GameSettings!");
+
+        return linkTags[tag].ToArray();
+    }
+
+    #endregion
+
     #region component holder
+    private bool addedInitialComponents = false;
+    public virtual void InitialAddComponents(LazyComponent[] components) {
+        if (addedInitialComponents)
+            throw new InvalidOperationException("Components have already been added at scene load. Cannot add other initial components!");
+
+        foreach (var lazyComponent in components) {
+            Component component = lazyComponent.Create();
+
+            component.gameObject = this;
+            if (component is Renderer renderer)
+                this.renderer = renderer;
+
+            this.components.Add(component);
+        }
+
+        // not updating since this registers the object before it's supposed to be subscribed
+        // GameObjectManager.Update(this);
+
+        addedInitialComponents = true;
+    }
+
+    public virtual Component[] AddComponents(Component[] components) {
+        Component[] returnComponents = new Component[components.Length];
+        foreach (var component in components)
+            _ = returnComponents.Append(AddComponent(component));
+
+        GameObjectManager.Update(this);
+
+        return returnComponents;
+    }
+
     public virtual Component AddComponent(Component component) {
         component.gameObject = this;
-        component.tag = tag;
-        component.transform = transform;
-
         components.Add(component);
+        if (component is Renderer renderer)
+            this.renderer = renderer;
+
+        GameObjectManager.Update(this);
+
         return component;
     }
 
@@ -135,12 +324,37 @@ public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, 
 
         Component newComponent = (Component) compInst;
         newComponent.gameObject = this;
-        newComponent.tag = tag;
-        newComponent.transform = transform;
 
         components.Add(newComponent);
+        if (newComponent is Renderer renderer)
+            this.renderer = renderer;
+
+        GameObjectManager.Update(this);
 
         return newComponent;
+    }
+
+    public virtual Component[] AddComponents(Type[] components) {
+        List<Component> returnComponents = new();
+
+        foreach (Type type in  components) { 
+            object? compInst = Activator.CreateInstance(type);
+            if (compInst == null || compInst is not Component)
+                throw new Exception("Could not create/add component to game object.");
+
+            Component newComponent = (Component) compInst;
+            newComponent.gameObject = this;
+
+            this.components.Add(newComponent);
+            if (newComponent is Renderer renderer)
+                this.renderer = renderer;
+
+            returnComponents.Add(newComponent);
+        }
+
+        GameObjectManager.Update(this);
+
+        return returnComponents.ToArray();
     }
 
     public virtual T AddComponent<T>() where T : Component {
@@ -150,10 +364,12 @@ public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, 
 
         T newComponent = (T) compInst;
         newComponent.gameObject = this;
-        newComponent.tag = tag;
-        newComponent.transform = transform;
 
         components.Add(newComponent);
+        if (newComponent is Renderer renderer)
+            this.renderer = renderer;
+
+        GameObjectManager.Update(this);
 
         return newComponent;
     }
@@ -178,14 +394,32 @@ public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, 
         return (T[]) components.FindAll(comp => comp is T).ToArray();
     }
 
+    /// <summary>
+    /// Checks if the component to be removed is a renderer and is the same renderer as the active renderer for this game object
+    /// </summary>
+    /// <param name="removed">The component to be checked</param>
+    private void CheckRemoveComponentRenderer(Component removed) {
+        if (removed is Renderer && renderer.Equals(removed))
+            renderer = null;
+    }
+
     public virtual Component RemoveComponent(Component component) {
         components.Remove(component);
+
+        CheckRemoveComponentRenderer(component);
+        Destroy(component);
+        GameObjectManager.Update(this);
+
         return component;
     }
 
     public virtual Component RemoveComponent(Type component) {
         Component comp = GetComponent(component);
         components.Remove(comp);
+
+        CheckRemoveComponentRenderer(comp);
+        Destroy(comp);
+        GameObjectManager.Update(this);
 
         return comp;
     }
@@ -194,12 +428,23 @@ public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, 
         T comp = GetComponent<T>();
         components.Remove(comp);
 
+        CheckRemoveComponentRenderer(comp);
+        Destroy(comp);
+        GameObjectManager.Update(this);
+
         return comp;
     }
 
     public virtual Component[] RemoveComponents(Type component) {
         Component[] comp = GetComponents(component);
         Array.ForEach(comp, c => RemoveComponent(c));
+
+        foreach (var c in comp) { 
+            CheckRemoveComponentRenderer(c);
+            Destroy(c);
+        }
+
+        GameObjectManager.Update(this);
 
         return comp;
     }
@@ -208,7 +453,45 @@ public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, 
         T[] comp = GetComponents<T>();
         Array.ForEach(comp, c => RemoveComponent(c));
 
+        foreach (var c in comp) { 
+            CheckRemoveComponentRenderer(c);
+            Destroy(c);
+        }
+
+        GameObjectManager.Update(this);
+
         return comp;
+    }
+    public void AwakeComponents() {
+        foreach (var comp in GetComponents()) { 
+            MethodInfo? info = Reflection.GetMethod(comp, "Awake");
+            if (info == null)
+                continue;
+
+            try { 
+                info.Invoke(comp, null);
+            } catch (Exception) {
+                throw new Exception("Awake Method was found but could not be invoked. Make sure it doesn't have any parameters.");
+            }
+
+            comp.initialized = true;
+        }
+    }
+
+    public void StartComponents() {
+        foreach (var comp in GetComponents()) { 
+            MethodInfo? info = Reflection.GetMethod(comp, "Start");
+            if (info == null)
+                continue;
+
+            try { 
+                info.Invoke(comp, null);
+            } catch (Exception) {
+                throw new Exception("Start Method was found but could not be invoked. Make sure it doesn't have any parameters.");
+            }
+
+            comp.started = true;
+        }
     }
     #endregion;
 
@@ -238,6 +521,18 @@ public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, 
             value.Subscribe();
             children[index] = value;
         } 
+    }
+
+    public List<GameObject> GetAll() {
+        List<GameObject> allChildren = new();
+
+        allChildren.AddRange(children);
+        foreach (var child in this) {
+            if (child)
+                allChildren.AddRange(child.GetAll());
+        }
+
+        return allChildren;
     }
 
     public int IndexOf(GameObject item) {
@@ -270,12 +565,35 @@ public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, 
         children.Clear();
     }
 
+    /// <summary>
+    /// Checks (shallow) if this game object contains another game object.
+    /// </summary>
+    /// <param name="item">The game object to be found</param>
     public bool Contains(GameObject item) {
         return children.Contains(item);
     }
 
+    /// <summary>
+    /// Checks (deep) if this game objects or its children (recursively) contain another game object.
+    /// </summary>
+    /// <param name="item">The game object to be found</param>
+    public bool ContainsDeep(GameObject item, bool performShallow = true) {
+        // do a shallow check just in case
+        if (performShallow)
+            if (Contains(item))
+                return true;
+
+        foreach (var child in this) {
+            if (child == item) return true;
+
+            ContainsDeep(item);
+        }
+
+        return false;
+    }
+
     public void CopyTo(GameObject[] array, int arrayIndex) {
-        throw new InvalidOperationException();
+        throw new InvalidOperationException("CopyTo is not a valid operation for GameObject!");
     }
 
     public bool Remove(GameObject item) {
@@ -316,14 +634,15 @@ public class GameObjectStructure {
     /// </summary>
     public string Tag;
     /// <summary>
-    /// The transform of the object (containing position, scale and rotation)
-    /// The default is [position = v2(0,0)] [scale = v2(1,1)] [rotation = 0f]
+    /// The transform of the object (containing position, scale and rotation)<br/>
+    /// The default is [position = v2(0,0)] [scale = v2(1,1)] [rotation = v3(0,0,0)]<br/>
+    /// A RectTransform can also be used here.
     /// </summary>
-    public Transform Transform = new() { position = Vector2.zero, scale = Vector2.one, rotation = 0f };
+    public Transform Transform = new() { position = Vector2.zero, scale = Vector2.one, rotation = Vector3.Zero };
     /// <summary>
     /// The components of this game object
     /// </summary>
-    public Component[] Components = Array.Empty<Component>();
+    public LazyComponent[] Components = Array.Empty<LazyComponent>();
     /// <summary>
     /// The children of this game object (if any)
     /// </summary>

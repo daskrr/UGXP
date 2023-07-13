@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace UGXP.Core {
+﻿namespace UGXP.Core {
     public interface ISoundSystem {
         public void Init();
         public void Deinit();

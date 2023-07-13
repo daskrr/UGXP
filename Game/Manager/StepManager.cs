@@ -1,20 +1,34 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Reflection;
 using UGXP.Core;
+using UGXP.Util;
 
 namespace UGXP.Game.Manager;
 public abstract class StepManager
 {
     protected delegate void StepDelegate();
     protected class OnStep {
-        public StepDelegate BeforeStep;
-        public StepDelegate Step;
-        public StepDelegate AfterStep;
+        public StepDelegate BeforeStep = () => { };
+        public StepDelegate Step = () => { };
+        public StepDelegate AfterStep = () => { };
+
+        public static OnStep operator +(OnStep step1, OnStep step2) {
+            OnStep newOnStep = new() {
+                BeforeStep = step1.BeforeStep + step2.BeforeStep,
+                Step = step1.Step + step2.Step,
+                AfterStep = step1.AfterStep + step2.AfterStep
+            };
+
+            return newOnStep;
+        }
+        public static OnStep operator -(OnStep step1, OnStep step2) {
+            OnStep newOnStep = new() {
+                BeforeStep = step1.BeforeStep - step2.BeforeStep,
+                Step = step1.Step - step2.Step,
+                AfterStep = step1.AfterStep - step2.AfterStep
+            };
+
+            return newOnStep;
+        }
     }
 
     protected Dictionary<GameObject, OnStep> activeGameObjects = new();
@@ -33,6 +47,7 @@ public abstract class StepManager
     }
 
     public abstract void Add(GameObject obj);
+    public abstract void Update(GameObject obj);
     public virtual bool Contains(GameObject obj) {
         return activeGameObjects.ContainsKey(obj);
     }
@@ -41,14 +56,14 @@ public abstract class StepManager
     }
 
     #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-    protected static StepDelegate? MethodToDelegate(object obj, string methodName, BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance) {
-        MethodInfo info = obj.GetType().GetMethod(methodName, flags);
+    protected static StepDelegate? MethodToDelegate(object obj, string methodName) {
+        MethodInfo info = Reflection.GetMethod(obj, methodName);
         if (info != null) {
-			StepDelegate onUpdate = (StepDelegate)Delegate.CreateDelegate(typeof(StepDelegate), obj, info, false);
+			StepDelegate onUpdate = (StepDelegate) Delegate.CreateDelegate(typeof(StepDelegate), obj, info, false);
 			if (onUpdate != null)
 				return onUpdate;
 		} else {
-			ValidateCase(obj, methodName, flags);
+			ValidateCase(obj, methodName);
 		}
 
         return null;
@@ -57,10 +72,11 @@ public abstract class StepManager
     //------------------------------------------------------------------------------------------------------------------------
 	//														ValidateCase()
 	//------------------------------------------------------------------------------------------------------------------------
-	private static void ValidateCase(object obj, string methodName, BindingFlags flags) {
-		MethodInfo info = obj.GetType().GetMethod(methodName.ToLower(), flags);
+	private static void ValidateCase(object obj, string methodName) {
+		MethodInfo info = Reflection.GetMethod(obj, methodName.ToLower());
 		if (info != null) {
 			throw new Exception($"'{ methodName }' function was not binded for '{ obj } '. Please check its case.");
 		}
 	}
 }
+

@@ -1,0 +1,230 @@
+using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
+using System.Xml.Linq;
+
+namespace UGXP.Reference;
+
+// TODO refrences are completely destroyed when a scene is reset, even if they were not part of that scene
+// also only make refrences from the active scenes accessible
+public class ReferenceManager
+{
+    public enum State {
+        SCENE_LOAD,
+        GAME_RUNTIME
+    }
+
+    private static ReferenceManager _instance;
+    private static ReferenceManager Instance {
+        get {
+            _instance ??= new ReferenceManager();
+
+            return _instance;
+        }
+    }
+
+    private State _state;
+    internal static State state {
+        get => Instance._state;
+        set => Instance._state = value;
+    }
+
+    /// <summary>
+    /// Holds all active references
+    /// Those references cannot be removed, unless the scene is unloaded
+    /// </summary>
+    private Dictionary<ObjectReference, IReferenceable> references = new();
+
+    private Dictionary<int, List<Lazy>> lazyReferencesById = new();
+    private Dictionary<string, List<Lazy>> lazyReferencesByName = new();
+
+    private int referenceIndex = -1;
+    private ReferenceManager() { }
+
+    /// <summary>
+    /// Creates a reference of an object that can be used anywhere with <see cref="Get"/>
+    /// </summary>
+    /// <typeparam name="T">The type of the <see cref="IReferenceable"/> object</typeparam>
+    /// <param name="referenceName">The name of the reference</param>
+    /// <param name="referenceable">The <see cref="IReferenceable"/> object</param>
+    /// <returns>The object reference</returns>
+    /// <exception cref="Exception">Throws an exception if the <paramref name="referenceName"/> already exists.</exception>
+    public static ObjectReference<T> Create<T>(string? referenceName, IReferenceable<T> referenceable) where T : IReferenceable {
+        if (referenceName != null && ReferenceExists(referenceName))
+            throw new Exception("Reference name already exists! Cannot override a reference; please choose another name.");
+
+        Console.WriteLine("created: " + referenceName);
+
+        int referenceId = ++Instance.referenceIndex;
+        ObjectReference<T> reference = new ObjectReference<T>(referenceId, referenceName);
+
+        Instance.references.Add(reference, referenceable);
+
+        return reference;
+    }
+
+    /// <summary>
+    /// Retrieves the referenceable object that corresponds to the name<br/>
+    /// Will always return a <see cref="Lazy"/> object, but depending on the <see cref="state"/> of this manager, the <i>Lazy</i>
+    /// will either contain the value of the referenceable when it is created or an already existing referenceable.
+    /// </summary>
+    /// <typeparam name="T">the type of object required</typeparam>
+    /// <param name="referenceName">the name of the reference</param>
+    /// <returns>the lazy referenceable object</returns>
+    /// <exception cref="Exception">Throws an exception if the reference could not be found</exception>
+    public static Lazy<T> Get<T>(string referenceName) where T : IReferenceable {
+        if (state == State.SCENE_LOAD)
+            return Instance.CreateLazy<T>(referenceName);
+        else {
+            foreach (var reference in Instance.references)
+                if (reference.Key.name == referenceName)
+                    return (Lazy<T>) reference.Value;
+        }
+
+        throw new Exception("The reference name provided does not exist!");
+    }
+    /// <summary>
+    /// Retrieves the referenceable object that corresponds to the id
+    /// </summary>
+    /// <typeparam name="T">the type of object required</typeparam>
+    /// <param name="referenceId">the id of the reference</param>
+    /// <returns>the referenceable object</returns>
+    /// <exception cref="Exception">Throws an exception if the reference could not be found</exception>
+    public static Lazy<T> Get<T>(int referenceId) where T : IReferenceable {
+        if (state == State.SCENE_LOAD)
+            return Instance.CreateLazy<T>(referenceId);
+        else {
+            foreach (var reference in Instance.references)
+                if (reference.Key.id == referenceId)
+                    return (Lazy<T>) reference.Value;
+        }
+
+        throw new Exception("The reference id provided does not exist!");
+    }
+
+    private Lazy<T> CreateLazy<T>(int id) where T : IReferenceable {
+        Lazy<T> lazy = new Lazy<T>();
+        if (!lazyReferencesById.ContainsKey(id))
+            lazyReferencesById.Add(id, new List<Lazy>());
+
+        lazyReferencesById[id].Add(lazy);
+
+        return lazy;
+    }
+    private Lazy<T> CreateLazy<T>(string name) where T : IReferenceable {
+        Lazy<T> lazy = new Lazy<T>();
+        if (!lazyReferencesByName.ContainsKey(name))
+            lazyReferencesByName.Add(name, new List<Lazy>());
+
+        lazyReferencesByName[name].Add(lazy);
+
+        return lazy;
+    }
+
+    /// <summary>
+    /// Checks if a reference already exists (by name)
+    /// </summary>
+    /// <param name="name">The name of the reference</param>
+    public static bool ReferenceExists(string name) {
+        foreach (ObjectReference reference in Instance.references.Keys) { 
+            if (reference.name == null) continue;
+
+            if (reference.name.Equals(name))
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Checks if a reference exists (by id)
+    /// </summary>
+    /// <param name="name">The name of the reference</param>
+    public static bool ReferenceExists(int id) {
+        foreach (var reference in Instance.references.Keys)
+            if (reference.id.Equals(id))
+                return true;
+
+        return false;
+    }
+
+    /// <summary>
+    /// Removed a reference (used in the case that a game object is destroyed, for example)
+    /// </summary>
+    /// <param name="id">the id of the reference</param>
+    internal static void RemoveReference(int id) {
+        foreach (var reference in Instance.references.Keys)
+            if (reference.id.Equals(id)) { 
+                // remove reference from cache
+                Instance.references.Remove(reference);
+
+                // revoke reference to where its being used
+                if (Instance.lazyReferencesById.ContainsKey(id))
+                    foreach (var lazyRef in Instance.lazyReferencesById[id])
+                        lazyRef.Revoke();
+
+                break;
+            }
+    }
+
+    internal static void ChangeState(State toState) {
+        state = toState;
+
+        // changing state to runtime
+        if (state == State.GAME_RUNTIME) {
+            // loop through all lazy references and set values if any
+
+            foreach (var lazyRef in Instance.lazyReferencesById)
+                if (ReferenceExists(lazyRef.Key)) {
+                    foreach (var reference in Instance.references.Keys)
+                        if (reference.id.Equals(lazyRef.Key)) {
+                            lazyRef.Value.ForEach(lr => lr.Assign(Instance.references[reference]));
+                            break;
+                        }
+                }
+
+            foreach (var lazyRef in Instance.lazyReferencesByName) { 
+                Console.WriteLine(lazyRef);
+
+                if (ReferenceExists(lazyRef.Key)) {
+                    foreach (var reference in Instance.references.Keys) {
+                        if (reference.name == null) continue;
+
+                        if (reference.name.Equals(lazyRef.Key)) {
+                            lazyRef.Value.ForEach(lr => lr.Assign(Instance.references[reference]));
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    ///// <summary>
+    ///// Resets all references (excludes Objects that are not destroyed on load)
+    ///// </summary>
+    //[Obsolete("The references are supposed to be automatically destroyed just as they are created by their objects!", true)]
+    //internal static void ResetReferences() {
+    //    // save dontDestroyOnLoad references
+    //    Dictionary<ObjectReference, IReferenceable> savedReferences = new();
+    //    Dictionary<int, ObjectReference> savedReferencesById = new();
+    //    Dictionary<string, ObjectReference> savedReferencesByName = new();
+    //    foreach (var reference in Instance.references)
+    //        if (reference.Value is Core.Object && (reference.Value as Core.Object).dontDestroyOnLoad) {
+    //            savedReferences.Add(reference.Key, reference.Value);
+    //            savedReferencesById.Add(reference.Key.id, reference.Key);
+    //            if (reference.Key.name != null)
+    //                savedReferencesByName.Add(reference.Key.name, reference.Key);
+    //        }
+
+    //    Instance.referenceIndex = -1;
+    //    Instance.references = savedReferences;
+    //    Instance.referencesById = savedReferencesById;
+    //    Instance.referencesByName = savedReferencesByName;
+    //    //Instance.references.Clear();
+    //}
+}
+
+
+public class ReferenceException : Exception {
+    public ReferenceException(string message) : base($"[State: {ReferenceManager.state}] {message}") { }
+}

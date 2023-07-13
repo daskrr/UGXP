@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
+﻿using OpenTK.Mathematics;
 using UGXP.Core;
+using UGXP.Core.Render;
 using UGXP.Game.Manager;
 
 namespace UGXP.Game;
@@ -11,7 +10,7 @@ namespace UGXP.Game;
 /// </summary>
 public class GameProcess
 {
-    public static GameProcess _main;
+    private static GameProcess _main;
     public static GameProcess Main { 
         get {
             return _main;
@@ -31,36 +30,42 @@ public class GameProcess
         }
     }
 
-    internal GLContext glContext;
-    public Rectangle RenderRange;
+    internal GLContext Context;
+    public Vector2i ScreenSize;
     
-    internal UpdateManager updateManager;
     internal GameObjectManager gameObjectManager;
+
+    internal UpdateManager updateManager;
+    internal RenderManager renderManager;
     internal SceneManager sceneManager;
 
     public GameProcess(GameSettings settings) {
         Main = this;
         this._settings = settings;
 
-        glContext = new GLContext (this);
+        // initialize managers not dependent on gl or game processes
+        LayerManager.Initialize(settings.Layers, settings.SortingLayers);
+        GameObject.RegisterTags(settings.Tags);
+
+        // initialize context, create window and managers
+        Context = new GLContext (this);
         // temporarily casting to int until I make a Vector2Int
-		glContext.CreateWindow(
+		Context.CreateWindow(
             settings.Name,
-            (int) settings.GameSize.x,
-            (int) settings.GameSize.y,
             settings.FullScreen,
             settings.VSync,
-            (int) settings.WindowSize.x,
-            (int) settings.WindowSize.y
+            settings.WindowSize
         );
 
-		RenderRange = new Rectangle (0, 0, (int) settings.GameSize.x, (int) settings.GameSize.y);
+        CursorSetup();
 
-        // not really necessary
         gameObjectManager = new GameObjectManager();
         updateManager = new UpdateManager();
+        renderManager = new RenderManager();
         sceneManager = new SceneManager();
     }
+
+    // TODO check if there is a camera present. If such a component was not added manually, add a default camera automatically!
 
     /// <summary>
     /// Add all the scenes available to this game. The order of the scenes determines their id.
@@ -74,12 +79,38 @@ public class GameProcess
         sceneManager.SetScenes(scenes);
     }
 
+    private void CursorSetup() {
+        switch (settings.CursorVisibility) {
+            case GameSettings.CursorShowMode.SHOW:
+                Context.ShowCursor();
+                break;
+            case GameSettings.CursorShowMode.HIDE:
+                Context.HideCursor();
+                break;
+            case GameSettings.CursorShowMode.DISABLE:
+                Context.HideCursor(true);
+                break;
+        }
+
+        switch (settings.CursorLocking) {
+            case GameSettings.CursorLockMode.UNLOCKED:
+                Context.UnlockCursor();
+                break;
+            //case GameSettings.CursorLockMode.WINDOW_LOCKED:
+            //    Context.LockCursor(true);
+            //    break;
+            case GameSettings.CursorLockMode.LOCKED:
+                Context.LockCursor();
+                break;
+        }
+    }
+
     /// <summary>
-    /// Starts the game, opens a window
+    /// Starts the game
     /// </summary>
     public void Start() {
-        glContext.Run();
-        sceneManager.LoadSceneInternal(0);
+        sceneManager.Load();
+        Context.Run();
     }
 
     // this looks weird now, but once more managers are introduced it will make sense
@@ -92,7 +123,9 @@ public class GameProcess
     }
 
     internal void Render() {
-        // TODO
+        renderManager.Render();
     }
+
+    internal void Close() { }
 }
 

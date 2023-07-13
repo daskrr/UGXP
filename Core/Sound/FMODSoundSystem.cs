@@ -1,7 +1,4 @@
-﻿using System;
-using UGXP.Core;
-
-namespace UGXP.Core {
+﻿namespace UGXP.Core {
     public class FMODSoundSystem : ISoundSystem {
         private static IntPtr _system = IntPtr.Zero;
 

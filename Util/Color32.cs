@@ -1,15 +1,15 @@
 ﻿namespace UGXP.Util;
-public class Color
+public class Color32
 {
-    public static readonly Color white = new Color(1,1,1, 1);
-    public static readonly Color black = new Color(0,0,0, 1);
+    public static readonly Color32 white = new Color32(255,255,255, 255);
+    public static readonly Color32 black = new Color32(0,0,0, 255);
 
-    public float r;
-    public float g;
-    public float b;
-    public float a;
+    public int r;
+    public int g;
+    public int b;
+    public int a;
 
-    public float this[int key] { 
+    public int this[int key] { 
         get {
             switch(key) {
                 case 0:
@@ -28,12 +28,10 @@ public class Color
 
     public uint hex {
         get {
-            Color32 c32 = (Color32) this;
-
-            uint r = (uint) (c32.r & 0xFF);
-            uint g = (uint) (c32.g & 0xFF);
-            uint b = (uint) (c32.b & 0xFF);
-            uint a = (uint) (c32.a & 0xFF);
+            uint r = (uint) (this.r & 0xFF);
+            uint g = (uint) (this.g & 0xFF);
+            uint b = (uint) (this.b & 0xFF);
+            uint a = (uint) (this.a & 0xFF);
 
             return (r << 24) + (g << 16) + (b << 8) + (a);
         }
@@ -42,7 +40,7 @@ public class Color
     /// <summary>
     /// A color class to store colors.
     /// </summary>
-    public Color() : this(0,0,0,1) { }
+    public Color32() : this(0,0,0,255) { }
 
     /// <summary>
     /// A color class to store colors. Alpha is defaulted to 255
@@ -51,11 +49,11 @@ public class Color
     /// <param name="r">Red value</param>
     /// <param name="g">Green value</param>
     /// <param name="b">Blue value</param>
-    public Color(float r, float g, float b) {
+    public Color32(int r, int g, int b) {
         this.r = r;
         this.g = g;
         this.b = b;
-        this.a = 1;
+        this.a = 255;
     }
 
     /// <summary>
@@ -66,15 +64,25 @@ public class Color
     /// <param name="g">Green value</param>
     /// <param name="b">Blue value</param>
     /// <param name="a">Alpha value</param>
-    public Color(float r, float g, float b, float a) {
+    public Color32(int r, int g, int b, int a) {
         this.r = r;
         this.g = g;
         this.b = b;
         this.a = a;
     }
 
-    public static explicit operator Color32(Color color) {
-        return new Color32((int) (color.r * 255), (int) (color.g * 255), (int) (color.b * 255), (int) (color.a * 255));
+    public float[] GetColors01() {
+        float[] colors = new float[4];
+        colors[0] = (float) this.r / 255;
+        colors[1] = (float) this.g / 255;
+        colors[2] = (float) this.b / 255;
+        colors[3] = (float) this.a / 255;
+
+        return colors;
+    }
+
+    public static explicit operator Color(Color32 color) {
+        return new Color((float) color.r / 255, (float) color.g / 255, (float) color.b / 255, (float) color.a / 255);
     }
 
     //TODO
