@@ -73,6 +73,21 @@ public class TextureAsset : Asset
 
     public TextureAsset() { }
 
+    internal override List<string> GetAssetNames() {
+        if (TextureMode == TextureMode.SINGLE || TextureMode == TextureMode.WRAP || TextureMode == TextureMode.SLICED)
+            return new List<string> { Name };
+        else if (TextureMode == TextureMode.MULTIPLE) {
+            List<string> names = new();
+
+            foreach (var texture in Textures)
+                names.Add(texture.Name);
+
+            return names;
+        }
+
+        return new List<string> { Name };
+    }
+
     internal override Dictionary<string, AssetInstance> GetAssets() {
         CheckForFile();
 

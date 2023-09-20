@@ -1,4 +1,9 @@
-﻿There was no licence provided for GXPEngine that was used as the base of this project. Unless one is found, the following MIT Licence applies for the modifications (UGXP):
+﻿There was no licence provided for GXPEngine that was used as the base inspiration of this project.
+Unless one is found, the following MIT Licence applies for the modifications (UGXP):
+
+The authors of GXP may include, but do not limit to: Paul Bonsma, Hans Wichman. (of Saxion University of Applied Sciences, CMGT)
+
+UGXP (Unified Game Experience)
 
 MIT License
 

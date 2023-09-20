@@ -43,6 +43,7 @@ public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, 
     protected List<Component> components = new();
 
     internal Renderer renderer;
+    internal List<Collider> colliders = new();
 
     private readonly GameObjectStructure structure;
 
@@ -284,8 +285,11 @@ public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, 
             Component component = lazyComponent.Create();
 
             component.gameObject = this;
+            // add renderers and colliders for ease of use
             if (component is Renderer renderer)
                 this.renderer = renderer;
+            if (component is Collider collider)
+                this.colliders.Add(collider);
 
             this.components.Add(component);
         }
@@ -301,6 +305,10 @@ public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, 
         foreach (var component in components)
             _ = returnComponents.Append(AddComponent(component));
 
+        // CHANGED TO only Update, since DoNextFrame is incorporated into Update now
+        //ExecutionManager.DoNextFrame(() => {
+        //    GameObjectManager.Update(this);
+        //});
         GameObjectManager.Update(this);
 
         return returnComponents;
@@ -309,8 +317,11 @@ public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, 
     public virtual Component AddComponent(Component component) {
         component.gameObject = this;
         components.Add(component);
+
         if (component is Renderer renderer)
             this.renderer = renderer;
+        if (component is Collider collider)
+            this.colliders.Add(collider);
 
         GameObjectManager.Update(this);
 
@@ -326,8 +337,11 @@ public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, 
         newComponent.gameObject = this;
 
         components.Add(newComponent);
+
         if (newComponent is Renderer renderer)
             this.renderer = renderer;
+        if (newComponent is Collider collider)
+            this.colliders.Add(collider);
 
         GameObjectManager.Update(this);
 
@@ -346,8 +360,11 @@ public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, 
             newComponent.gameObject = this;
 
             this.components.Add(newComponent);
+
             if (newComponent is Renderer renderer)
                 this.renderer = renderer;
+            if (newComponent is Collider collider)
+                this.colliders.Add(collider);
 
             returnComponents.Add(newComponent);
         }
@@ -366,8 +383,11 @@ public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, 
         newComponent.gameObject = this;
 
         components.Add(newComponent);
+
         if (newComponent is Renderer renderer)
             this.renderer = renderer;
+        if (newComponent is Collider collider)
+            this.colliders.Add(collider);
 
         GameObjectManager.Update(this);
 
@@ -375,11 +395,13 @@ public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, 
     }
 
     public virtual Component GetComponent(Type component) {
-        return components.Find(comp => comp.GetType().Equals(component)) ?? throw new Exception("Could not find the component of type.");
+        return components.Find(comp => 
+        comp.GetType().Equals(component)) ?? 
+            DevelopmentHandlers.HandleValueNotFound<Component>("Could not find the component of type.");
     }
 
     public virtual T GetComponent<T>() where T : Component {
-        return (T) (components.Find(comp => comp is T) ?? throw new Exception("Could not find the component of type."));
+        return (T) (components.Find(comp => comp is T) ?? DevelopmentHandlers.HandleValueNotFound<T>("Could not find the component of type."));
     }
 
     public virtual Component[] GetComponents() {
@@ -395,19 +417,23 @@ public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, 
     }
 
     /// <summary>
-    /// Checks if the component to be removed is a renderer and is the same renderer as the active renderer for this game object
+    /// Checks if the component to be removed is a renderer or a collider and is the same renderer/collider as the active renderer/collider for this game object
     /// </summary>
     /// <param name="removed">The component to be checked</param>
-    private void CheckRemoveComponentRenderer(Component removed) {
+    private void CheckRemoveComponent(Component removed) {
         if (removed is Renderer && renderer.Equals(removed))
             renderer = null;
+        if (removed is Collider collider && colliders.Contains(removed))
+            colliders.Remove(collider);
     }
 
     public virtual Component RemoveComponent(Component component) {
-        components.Remove(component);
+        ExecutionManager.DoNextFrame(() => {
+            components.Remove(component);
 
-        CheckRemoveComponentRenderer(component);
-        Destroy(component);
+            CheckRemoveComponent(component);
+            Destroy(component);
+        });
         GameObjectManager.Update(this);
 
         return component;
@@ -415,10 +441,13 @@ public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, 
 
     public virtual Component RemoveComponent(Type component) {
         Component comp = GetComponent(component);
-        components.Remove(comp);
 
-        CheckRemoveComponentRenderer(comp);
-        Destroy(comp);
+        ExecutionManager.DoNextFrame(() => {
+            components.Remove(comp);
+
+            CheckRemoveComponent(comp);
+            Destroy(comp);
+        });
         GameObjectManager.Update(this);
 
         return comp;
@@ -426,10 +455,13 @@ public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, 
 
     public virtual T RemoveComponent<T>() where T : Component {
         T comp = GetComponent<T>();
-        components.Remove(comp);
 
-        CheckRemoveComponentRenderer(comp);
-        Destroy(comp);
+        ExecutionManager.DoNextFrame(() => {
+            components.Remove(comp);
+
+            CheckRemoveComponent(comp);
+            Destroy(comp);
+        });
         GameObjectManager.Update(this);
 
         return comp;
@@ -437,13 +469,15 @@ public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, 
 
     public virtual Component[] RemoveComponents(Type component) {
         Component[] comp = GetComponents(component);
-        Array.ForEach(comp, c => RemoveComponent(c));
 
-        foreach (var c in comp) { 
-            CheckRemoveComponentRenderer(c);
-            Destroy(c);
-        }
+        ExecutionManager.DoNextFrame(() => {
+            Array.ForEach(comp, c => RemoveComponent(c));
 
+            foreach (var c in comp) { 
+                CheckRemoveComponent(c);
+                Destroy(c);
+            }
+        });
         GameObjectManager.Update(this);
 
         return comp;
@@ -451,13 +485,15 @@ public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, 
 
     public virtual T[] RemoveComponents<T>() where T : Component {
         T[] comp = GetComponents<T>();
-        Array.ForEach(comp, c => RemoveComponent(c));
 
-        foreach (var c in comp) { 
-            CheckRemoveComponentRenderer(c);
-            Destroy(c);
-        }
+        ExecutionManager.DoNextFrame(() => {
+            Array.ForEach(comp, c => RemoveComponent(c));
 
+            foreach (var c in comp) { 
+                CheckRemoveComponent(c);
+                Destroy(c);
+            }
+        });
         GameObjectManager.Update(this);
 
         return comp;
@@ -507,19 +543,25 @@ public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, 
     public int Count => children.Count;
 
     public bool IsReadOnly => false;
-
+    
+    /// <summary>
+    /// Replaces a child at index, also destroying the previous child at that index.
+    /// </summary>
+    /// <param name="index">the index for the child</param>
     public GameObject this[int index] { 
         get => children[index];
         set {
-            Destroy(children[index]);
+            ExecutionManager.DoNextFrame(() => {
+                Destroy(children[index]);
 
-            // child game object is kept in the array, however it is destroyed so a /== null/ check will return true
-            if (value == null)
-                return;
+                // child game object is kept in the array, however it is destroyed so a /== null/ check will return true
+                if (value == null)
+                    return;
 
-            value.parent = this;
-            value.Subscribe();
-            children[index] = value;
+                value.parent = this;
+                value.Subscribe();
+                children[index] = value;
+            });
         } 
     }
 
@@ -540,29 +582,37 @@ public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, 
     }
 
     public void Insert(int index, GameObject item) {
-        item.parent = this;
-        item.Subscribe();
-        children.Insert(index, item);
+        ExecutionManager.DoNextFrame(() => {
+            item.parent = this;
+            item.Subscribe();
+            children.Insert(index, item);
+        });
     }
 
     public void RemoveAt(int index) {
-        children[index].parent = null;
-        children[index].Unsubscribe();
-        children.RemoveAt(index);
+        ExecutionManager.DoNextFrame(() => {
+            children[index].parent = null;
+            children[index].Unsubscribe();
+            children.RemoveAt(index);
+        });
     }
 
     public void Add(GameObject item) {
-        item.parent = this;
-        item.Subscribe();
-        children.Add(item);
+        ExecutionManager.DoNextFrame(() => {
+            item.parent = this;
+            item.Subscribe();
+            children.Add(item);
+        });
     }
 
     public void Clear() {
-        children.ForEach(child => {
-            child.parent = null;
-            child.Unsubscribe();
+        ExecutionManager.DoNextFrame(() => {
+            children.ForEach(child => {
+                child.parent = null;
+                child.Unsubscribe();
+            });
+            children.Clear();
         });
-        children.Clear();
     }
 
     /// <summary>
@@ -596,14 +646,20 @@ public class GameObject : Object, IComponentHolder, IReferenceable<GameObject>, 
         throw new InvalidOperationException("CopyTo is not a valid operation for GameObject!");
     }
 
+    /// <summary>
+    /// Removes a child game object.<br/>
+    /// Note: This will return true if the child exists and will try to remove it. The return bool does not represent the success of removal!
+    /// </summary>
+    /// <param name="item">The game object to remove</param>
     public bool Remove(GameObject item) {
-        if (children.Remove(item)) {
-            item.parent = null;
-            item.Unsubscribe();
-            return true;
-        }
-
-        return false;
+        ExecutionManager.DoNextFrame(() => {
+            if (children.Remove(item)) {
+                item.parent = null;
+                item.Unsubscribe();
+            }
+        });
+        
+        return Contains(item);
     }
     #endregion;
 

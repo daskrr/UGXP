@@ -119,3 +119,33 @@ public class GameSettings : ICloneable {
         return gameSettings;
     }
 }
+
+
+public class DeveloperSettings
+{
+    public enum ValueHandle {
+        /// <summary>
+        /// Throws an exception when a lookup for a value is not fruitful.
+        /// </summary>
+        THROW_EXCEPTION,
+        /// <summary>
+        /// Writes a silent error in the console, returning a null value.
+        /// </summary>
+        SILENT_ERROR,
+        /// <summary>
+        /// Returns a null value.
+        /// </summary>
+        RETURN_NULL,
+    }
+
+    /// <summary>
+    /// What to do when a value is not found after a lookup (anywhere).
+    /// </summary>
+    public ValueHandle ValueNotFoundHandling = ValueHandle.THROW_EXCEPTION;
+
+    /// <summary>
+    /// NOT IMPLEMENTED<br/>
+    /// Whether to show the toolbar or not.
+    /// </summary>
+    public bool ShowToolbar = false;
+}

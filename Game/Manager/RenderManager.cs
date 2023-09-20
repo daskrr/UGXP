@@ -1,11 +1,10 @@
 ﻿using UGXP.Core;
 using UGXP.Core.Components;
+using UGXP.Tools;
 
 namespace UGXP.Game.Manager;
 
-// TODO !!! CHANGE SORTING ORDER
-// make the sorting separated in sorting layers. if an object of a specific sorting layer is added, only re-sort that layer
-public class RenderManager
+internal class RenderManager
 {
     private List<List<GameObject>> renderers;
 
@@ -108,5 +107,6 @@ public class RenderManager
     /// </summary>
     public void Render() {
         renderers.ForEach(layer => layer.ForEach(obj => obj.renderer.Render()));
+        Gizmos.Render();
     }
 }

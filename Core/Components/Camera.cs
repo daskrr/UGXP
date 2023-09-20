@@ -2,6 +2,7 @@
 using UGXP.Core.Render;
 using UGXP.Game;
 using UGXP.Reference;
+using UGXP.Tools;
 using UGXP.Util;
 
 namespace UGXP.Core.Components;
@@ -68,7 +69,7 @@ public class Camera : Component, IReferenceable<Camera>
     public Vector2 unitSize {
         get {
             if (_unitSize == null) {
-                Vector2 screenSize = GameProcess.Main.Context.windowSize;
+                Vector2 screenSize = GameProcess.Context.windowSize;
                 float aspect = screenSize.x / screenSize.y;
 
                 float heightUnits = orthographicSize;
@@ -84,6 +85,15 @@ public class Camera : Component, IReferenceable<Camera>
     private void Awake() {
         if (Main == null && renderTarget == RenderTarget.SCREEN)
             Main = this;
+    }
+
+    // TESTING
+    private void Update() {
+        //Gizmos.DrawRect(Vector2.zero, new Vector2(5, 5));
+        //Gizmos.DrawCircle(Vector2.zero - 2, 3);
+        //Gizmos.DrawRect(Vector2.zero + 2, new Vector2(5, 5) + 2);
+        //Gizmos.DrawRect(Vector2.zero - 2.5f, new Vector2(5, 5) - 2.5f);
+        //Gizmos.DrawCircle(Vector2.zero - 5, 3);
     }
 
     /// <summary>

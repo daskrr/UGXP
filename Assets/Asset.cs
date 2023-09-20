@@ -22,14 +22,14 @@ public abstract class Asset
     /// </summary>
     internal bool IsSingle = true;
 
+    internal abstract List<string> GetAssetNames();
+
     /// <summary>
     /// Creates a instantiated assets (<see cref="AssetInstance"/> that can be used by the <see cref="AssetManager"/>.<br/>
     /// Only to be used if an asset structure can create multiple assets!
     /// </summary>
     /// <returns>The instantiated assets</returns>
-    internal unsafe virtual Dictionary<string, AssetInstance> GetAssets() {
-        throw new Exception("There is no defined asset instance for this asset!");
-    }
+    internal abstract Dictionary<string, AssetInstance> GetAssets();
 }
 
 public abstract class AssetInstance {

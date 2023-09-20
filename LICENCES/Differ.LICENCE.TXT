@@ -1,6 +1,14 @@
+Differ (differSAT2D.dll [differ-cs]) is a port of differ (the collision detection algorithm created in haxe)
+differ-cs: https://github.com/bfollington/differ-cs
+differ: https://github.com/snowkit/differ
+
+differ-cs is written by Ben Follington and has no licence. The code is simply ported from the version written in haxe, which has the following licence:
+
 MIT License
 
-Copyright (c) 2023 Alexandru Vasile
+
+Copyright (c) 2017 Sven Bergström
+Copyright (c) 2017 differ contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

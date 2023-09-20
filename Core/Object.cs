@@ -1,4 +1,6 @@
-﻿using UGXP.Game.Manager;
+﻿using System.Collections;
+using UGXP.Game;
+using UGXP.Game.Manager;
 
 namespace UGXP.Core;
 public class Object
@@ -8,6 +10,8 @@ public class Object
     internal bool active = true;
     internal bool destroyed = false;
     internal bool dontDestroyOnLoad = false;
+
+    internal List<Routine> routines = new();
 
     /// <summary>
     /// Sets this object's active status.
@@ -19,16 +23,66 @@ public class Object
     }
 
     /// <summary>
+    /// Starts a routine. Routines are actions that get executed at specific points in time.<br/>
+    /// <see cref="WaitForEndOfFrame"/> | <see cref="WaitForSeconds"/>
+    /// </summary>
+    /// <param name="routine">The routine's <see cref="IEnumerator"/></param>
+    /// <returns>The created routine</returns>
+    public Routine StartRoutine(IEnumerator routine) {
+        Routine rI = ExecutionManager.StartRoutine(routine);
+        routines.Add(rI);
+        return rI;
+    }
+
+    /// <summary>
+    /// Pauses a routine.
+    /// </summary>
+    /// <param name="routine">The routine to pause</param>
+    public void PauseRoutine(Routine routine) {
+        if (!routines.Contains(routine))
+            throw new InvalidOperationException("The specified routine is not part of this object!");
+
+        routine.Pause();
+    }
+
+    /// <summary>
+    /// Resumes a routine.
+    /// </summary>
+    /// <param name="routine">The routine to resume</param>
+    public void ResumeRoutine(Routine routine) {
+        if (!routines.Contains(routine))
+            throw new InvalidOperationException("The specified routine is not part of this object!");
+
+        routine.Pause(false);
+    }
+
+    /// <summary>
+    /// Stops and disposes of a routine
+    /// </summary>
+    /// <param name="routine">The routine to stop</param>
+    public void StopRoutine(Routine routine) {
+        if (!routines.Contains(routine))
+            throw new InvalidOperationException("The specified routine is not part of this object!");
+
+        routine.End();
+        routines.Remove(routine);
+    }
+
+    /// <summary>
     /// Destroys a game object after this frame.
     /// Destroyed objects cannot be added back to the game!
     /// </summary>
     /// <param name="obj">The object to destroy</param>
     public static void Destroy(Object obj) {
-        if (obj is GameObject)
-            GameObjectManager.Unsubscribe(obj as GameObject);
+        ExecutionManager.DoNextFrame(() => {
+            if (obj is GameObject)
+                GameObjectManager.Unsubscribe(obj as GameObject);
 
-        obj.destroyed = true;
-        obj.OnDestroy();
+            obj.routines.ForEach(r => r.End());
+
+            obj.destroyed = true;
+            obj.OnDestroy();
+        });
     }
 
     /// <summary>

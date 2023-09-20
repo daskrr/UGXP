@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using UGXP.Util;
 
 namespace UGXP.Assets;
 
@@ -39,17 +40,18 @@ public class AssetManager
     }
 
     /// <summary>
-    /// Retrieves an asset instance from the stored assets or from the cache (if asset is cached).<br/>
-    /// If the asset is not cached but it exists, the asset is automatically cached until the game is closed.<br/>
+    /// Retrieves an asset instance from the stored assets or from the cache.<br/>
+    /// If the asset is not cached but it exists, the asset is automatically cached until destroyed<br/>
     /// <i>Use <see cref="RemoveFromCache"/> to remove an asset from cache.</i>
     /// </summary>
     /// <typeparam name="T">The return type of the asset.</typeparam>
     /// <param name="name">The name of the asset</param>
+    /// <param name="childName">Optional: The name of the sub-asset</param>
     /// <returns>The asset instance</returns>
-    public static T Get<T>(string name, string childName = null) where T : AssetInstance {
+    public static T Get<T>(string name, string? childName = null) where T : AssetInstance {
         AssetInstance asset = Get(name, childName);
         if (asset is not T)
-            throw new Exception("The return type provided does not match the asset instance's type");
+            return DevelopmentHandlers.HandleValueNotFound<T>("The return type provided does not match the asset instance's type");
 
         return asset as T;
     }
@@ -59,14 +61,23 @@ public class AssetManager
     /// <i>Use <see cref="RemoveFromCache"/> to remove an asset from cache.</i>
     /// </summary>
     /// <param name="name">The name of the asset</param>
+    /// <param name="childName">Optional: The name of the sub-asset</param>
     /// <returns>The asset instance</returns>
-    public static AssetInstance Get(string name, string childName = null) {
+    public static AssetInstance Get(string name, string? childName = null) {
         // check if asset exists
         if (!Instance.assets.ContainsKey(name))
-            throw new Exception("The specified asset name does not exist as an asset in the stored assets or cached assets. Use Create to make an asset.");
+            return DevelopmentHandlers.HandleValueNotFound<AssetInstance>("The specified asset name does not exist. Use Create to make an asset.");
 
         if (!Instance.assets[name].IsSingle && childName == null)
             throw new Exception($"The asset [{name}] requested is not singular. Please use the second parameter to specify the child of this asset to get.");
+
+        if (Instance.assets[name].IsSingle && childName != null)
+            throw new Exception($"The asset [{name}] requested is singular and therefore has no children. Use only its name!");
+
+        // check if child name exists too
+        if (childName != null)
+            if (!Instance.assets[name].GetAssetNames().Contains(childName))
+                return DevelopmentHandlers.HandleValueNotFound<AssetInstance>("The specified sub-asset name does not exist. Use Create to make an asset.");
 
         childName ??= name;
 
@@ -92,10 +103,9 @@ public class AssetManager
     /// </summary>
     /// <param name="name">The name of the asset</param>
     /// <returns>The asset</returns>
-    /// <exception cref="Exception">Thrown if the asset doesn't exit</exception>
     public static Asset GetAsset(string name) {
         if (!Instance.assets.ContainsKey(name))
-            throw new Exception("The specified asset could not be found!");
+            return DevelopmentHandlers.HandleValueNotFound<Asset>("The specified asset could not be found!");
 
         return Instance.assets[name];
     }
@@ -116,6 +126,7 @@ public class AssetManager
                         Instance.assetCache.Add(asset.Key, asset.Value);
                     
                     // initialize instance (if needed)
+                    // this would be used while the game is running
                     if (!Instance.assetCache[asset.Key].initialized)
                         Instance.assetCache[asset.Key].Load();
                 }
@@ -131,13 +142,7 @@ public class AssetManager
     internal static void Unload(params string[] toUnload) {
         foreach (string name in toUnload)
             if (Instance.assets.ContainsKey(name)) {
-                List<string> assetNames = new();
-
-                try {
-                    foreach (string key in Instance.assets[name].GetAssets().Keys)
-                        assetNames.Add(key);
-                }
-                catch (Exception) { }
+                List<string> assetNames = Instance.assets[name].GetAssetNames();
 
                 foreach (var asset in assetNames) {
                     if (!Instance.assetCache.ContainsKey(asset)) continue;

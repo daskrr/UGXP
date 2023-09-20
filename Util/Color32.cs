@@ -1,8 +1,8 @@
 ﻿namespace UGXP.Util;
 public class Color32
 {
-    public static readonly Color32 white = new Color32(255,255,255, 255);
-    public static readonly Color32 black = new Color32(0,0,0, 255);
+    public static Color32 white => new Color32(255,255,255, 255);
+    public static Color32 black => new Color32(0,0,0, 255);
 
     public int r;
     public int g;

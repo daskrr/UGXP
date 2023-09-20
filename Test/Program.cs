@@ -7,21 +7,26 @@ using UGXP.Game;
 using UGXP.Reference;
 using UGXP.Util;
 
-namespace UGXP;
+namespace UGXP.Test;
 
 internal class Program {
 
     static void Main(string[] args) {
-        GameProcess game = new GameProcess(new GameSettings {
-            Name = "Test",
-            WindowSize = new Vector2(1280, 720),
-            //WindowSize = new Vector2(1920, 1080),
-            FullScreen = GameSettings.FullscreenMode.WINDOWED,
-            SortingLayers = new string[] {
-                "layer1",
-                "layer2"
+        GameProcess game = new GameProcess(
+            new GameSettings {
+                Name = "Test",
+                WindowSize = new Vector2(1280, 720),
+                //WindowSize = new Vector2(1920, 1080),
+                FullScreen = GameSettings.FullscreenMode.WINDOWED,
+                SortingLayers = new string[] {
+                    "layer1",
+                    "layer2"
+                }
+            },
+            new DeveloperSettings {
+                ValueNotFoundHandling = DeveloperSettings.ValueHandle.THROW_EXCEPTION
             }
-        });
+        );
 
         AssetManager.Create(new TextureAsset() { 
             Name = "TestTexture",
@@ -39,6 +44,25 @@ internal class Program {
                 { "Idle0", 4, 2, PivotPoint.BOTTOM_CENTER }
             }
         });
+
+        //game.SetScenes(new SceneStructure[] {
+        //    new SceneStructure {
+        //        Name = "TestScene",
+        //        Objects = new GameObjectStructure[] {
+        //            new GameObjectStructure {
+        //                Name = "Camera",
+        //                Transform = new Transform {
+        //                    position = new Vector2(0,0)
+        //                },
+        //                Components = new LazyComponent[] {
+        //                    Component.Create<Camera>(camera => {
+        //                        camera.orthographicSize = 7f;
+        //                    })
+        //                }
+        //            }
+        //        }
+        //    }
+        //});
 
         game.SetScenes(new SceneStructure[] {
             new SceneStructure {

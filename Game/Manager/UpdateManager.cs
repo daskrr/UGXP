@@ -1,7 +1,7 @@
 ﻿using UGXP.Core;
 
 namespace UGXP.Game.Manager;
-public class UpdateManager : StepManager
+internal class UpdateManager : StepManager
 {
     public override void Add(GameObject obj) {
         if (!obj || !obj.active) return;
@@ -14,15 +14,32 @@ public class UpdateManager : StepManager
 
             StepDelegate? early = MethodToDelegate(comp, "EarlyUpdate");
             if (early != null)
-                beforeStep += early;
+                beforeStep += () => {
+                    if (obj.active && comp.active)
+                        early();
+                };
 
             StepDelegate? update = MethodToDelegate(comp, "Update");
             if (update != null)
-                step += update;
+                step += () => {
+                    if (obj.active && comp.active)
+                        update();
+                };
 
-            StepDelegate? late = MethodToDelegate(comp, "EarlyUpdate");
+            StepDelegate? late = MethodToDelegate(comp, "LateUpdate");
             if (late != null)
-                afterStep += late;
+                afterStep += () => {
+                    if (obj.active && comp.active)
+                        late();
+                };
+
+            // Add gizmos here since it creates its own queue
+            StepDelegate? gizmosDraw = MethodToDelegate(comp, "OnGizmosDraw");
+            if (gizmosDraw != null)
+                afterStep += () => {
+                    if (obj.active && comp.active)
+                        gizmosDraw();
+                };
         });
 
         // TODO add fixedupdate (fixed rate)

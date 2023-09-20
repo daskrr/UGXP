@@ -46,9 +46,16 @@ public static class Mathf
 	}
 
 	/// <summary>
+	/// Returns the smallest integer as a float bigger greater than or equal to the specified number
+	/// </summary>
+	public static float Ceil(float a) {
+		return (float)Math.Ceiling (a);
+	}
+
+	/// <summary>
 	/// Returns the smallest integer bigger greater than or equal to the specified number
 	/// </summary>
-	public static int Ceiling(float a) {
+	public static int CeilToInt(float a) {
 		return (int)Math.Ceiling (a);
 	}
 
@@ -74,9 +81,16 @@ public static class Mathf
 	}
 
 	/// <summary>
+	/// Returns the largest integer as a float less than or equal to the specified value
+	/// </summary>
+	public static float Floor(float f) {
+		return (float) Math.Floor (f);
+	}
+
+	/// <summary>
 	/// Returns the largest integer less than or equal to the specified value
 	/// </summary>
-	public static int Floor(float f) {
+	public static int FloorToInt(float f) {
 		return (int)Math.Floor (f);
 	}
 
@@ -231,6 +245,10 @@ public static class Mathf
 	/// <returns></returns>
 	public static float LerpUnclamped(float a, float b, float t) {
 		return a + (b - a) * t;
+	}
+
+	public static float DegreesToRadians(float angle) {
+		return (float) (angle * Math.PI / 180);
 	}
 
 	/*

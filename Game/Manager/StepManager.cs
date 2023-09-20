@@ -3,7 +3,7 @@ using UGXP.Core;
 using UGXP.Util;
 
 namespace UGXP.Game.Manager;
-public abstract class StepManager
+internal abstract class StepManager
 {
     protected delegate void StepDelegate();
     protected class OnStep {
@@ -69,14 +69,10 @@ public abstract class StepManager
         return null;
     }
 
-    //------------------------------------------------------------------------------------------------------------------------
-	//														ValidateCase()
-	//------------------------------------------------------------------------------------------------------------------------
 	private static void ValidateCase(object obj, string methodName) {
 		MethodInfo info = Reflection.GetMethod(obj, methodName.ToLower());
-		if (info != null) {
+		if (info != null)
 			throw new Exception($"'{ methodName }' function was not binded for '{ obj } '. Please check its case.");
-		}
 	}
 }
 

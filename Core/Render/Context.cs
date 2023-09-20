@@ -6,6 +6,11 @@ internal abstract class Context
 {
     public static Type defaultSoundSystem = typeof(SoloudSoundSystem);
 
+    public KeyCallback keyCallback;
+    public MouseButtonCallback mouseButtonCallback;
+    public MouseCallback mouseCallback;
+    public SizeCallback sizeCallback;
+
     protected const int MAXKEYS = 65535;
     protected const int MAXBUTTONS = 255;
 
@@ -27,7 +32,7 @@ internal abstract class Context
     public bool cursorLocked = false;
     public bool cursorLockedInWindow = false;
 
-    protected int targetFrameRate = 60;
+    protected int targetFrameRate = 240;
     protected long lastFrameTime = 0;
     protected long lastFPSTime = 0;
     protected int frameCount = 0;
@@ -104,23 +109,23 @@ internal abstract class Context
     /// <summary>
     /// Checks if the specified key is pressed (<see cref="InputState.Repeat"/> || <see cref="InputState.Press"/>)
     /// </summary>
-    /// <param name="key">The id of the key (<see cref="Keys"/>)</param>
+    /// <param name="key">The id of the key (<see cref="Key"/>)</param>
     /// <param name="strict">Whether to accept <see cref="InputState.Press"/> or not</param>
     /// <returns>true if the key is pressed</returns>
-    public bool GetKey(Keys key, bool strict = false) {
+    public bool GetKey(int key, bool strict = false) {
         if (strict)
-            return keys[(int)key] == InputState.Repeat;
+            return keys[key] == InputState.Repeat;
 
-        return keys[(int)key] == InputState.Repeat || keys[(int)key] == InputState.Press;
+        return keys[key] == InputState.Repeat || keys[key] == InputState.Press;
     }
 
     /// <summary>
     /// Checks if the specified key is pressed (down) (<see cref="InputState.Press"/>)
     /// </summary>
-    /// <param name="key">The id of the key (<see cref="Keys"/>)</param>
+    /// <param name="key">The id of the key (<see cref="Key"/>)</param>
     /// <returns>true if the key is pressed</returns>
-    public bool GetKeyDown(Keys key) {
-        return keys[(int)key] == InputState.Press;
+    public bool GetKeyDown(int key) {
+        return keys[key] == InputState.Press;
     }
 
     /// <summary>
@@ -128,8 +133,8 @@ internal abstract class Context
     /// </summary>
     /// <param name="key">The id of the key (<see cref="Keys"/>)</param>
     /// <returns>true if the key is released</returns>
-    public bool GetKeyUp(Keys key) {
-        return keys[(int)key] == InputState.Release;
+    public bool GetKeyUp(int key) {
+        return keys[key] == InputState.Release;
     }
 
     public bool AnyKey() {
@@ -146,11 +151,11 @@ internal abstract class Context
     /// <param name="button">The id of the mouse button (<see cref="MouseButton"/>)</param>
     /// <param name="strict">Whether to accept <see cref="InputState.Press"/> or not</param>
     /// <returns>true if the key is pressed</returns>
-    public bool GetMouseButton(MouseButton button, bool strict = false) {
+    public bool GetMouseButton(int button, bool strict = false) {
         if (strict)
-            return mouseButtons[(int)button] == InputState.Repeat;
+            return mouseButtons[button] == InputState.Repeat;
 
-        return mouseButtons[(int)button] == InputState.Repeat || mouseButtons[(int)button] == InputState.Press;
+        return mouseButtons[button] == InputState.Repeat || mouseButtons[button] == InputState.Press;
     }
 
     /// <summary>
@@ -158,8 +163,8 @@ internal abstract class Context
     /// </summary>
     /// <param name="button">The id of the mouse button (<see cref="MouseButton"/>)</param>
     /// <returns>true if the key is pressed</returns>
-    public bool GetMouseButtonDown(MouseButton button) {
-        return mouseButtons[(int)button] == InputState.Press;
+    public bool GetMouseButtonDown(int button) {
+        return mouseButtons[button] == InputState.Press;
     }
 
     /// <summary>
@@ -167,8 +172,8 @@ internal abstract class Context
     /// </summary>
     /// <param name="button">The id of the mouse button (<see cref="MouseButton"/>)</param>
     /// <returns>true if the key is released</returns>
-    public bool GetMouseButtonUp(MouseButton button) {
-        return mouseButtons[(int)button] == InputState.Release;
+    public bool GetMouseButtonUp(int button) {
+        return mouseButtons[button] == InputState.Release;
     }
 
     public void ResetHitCounters() {

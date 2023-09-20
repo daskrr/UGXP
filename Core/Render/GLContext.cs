@@ -61,34 +61,40 @@ internal class GLContext : Context
         GL.Viewport(0, 0, (int) windowSize.x, (int) windowSize.y);
 
         // callbacks
-        Glfw.SetKeyCallback(window, (window, key, scanCode, state, mods) => {
-            if (state == InputState.Press || state == InputState.Repeat) {
+        BindCallbacks();
+    }
+
+    private void BindCallbacks() {
+        keyCallback = (_, key, scanCode, state, mods) => {
+            if (state == GLFW.InputState.Press || state == GLFW.InputState.Repeat) {
                 anyKeyDown = true;
                 keyPressedCount++;
             }
             else
                 keyPressedCount--;
 
-            keys[(int)key] = state;
-        });
-
-        Glfw.SetMouseButtonCallback(window, (window, button, state, modifiers) => mouseButtons[(int)button] = state);
-
-        Glfw.SetCursorPositionCallback(window, (window, x, y) => {
+            keys[(int)key] = (InputState) state;
+        };
+        mouseButtonCallback = (_, button, state, _) => mouseButtons[(int) button] = (InputState) state;
+        mouseCallback = (_, x, y) => {
             if (cursorLocked) return;
 
             mousePosition = new Vector2((float) x, (float) y);
-        });
-
-        Glfw.SetWindowSizeCallback(window, (window, width, height) => {
+        };
+        sizeCallback = (window, width, height) => {
             windowSize = new Vector2(width, height);
             GL.Viewport(0, 0, width, height);
 
             Camera.Main.RefreshUnitSize();
-        });
+        };
+
+        Glfw.SetKeyCallback(window, keyCallback);
+        Glfw.SetMouseButtonCallback(window, mouseButtonCallback);
+        Glfw.SetCursorPositionCallback(window, mouseCallback);
+        Glfw.SetWindowSizeCallback(window, sizeCallback);
     }
 
-    public int[] CreateVerticesBuffers(float[] vertices, uint[] indices, ShaderProgram shader, BufferUsageHint drawType = BufferUsageHint.StaticDraw) {
+    public int[] CreateTexVerts(float[] vertices, uint[] indices, ShaderProgram shader, BufferUsageHint drawType = BufferUsageHint.StaticDraw) {
         int vao, vbo, ebo;
 
         vao = GL.GenVertexArray();
@@ -118,18 +124,65 @@ internal class GLContext : Context
         GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
         GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
 
+        shader.Unbind();
+
+        return new int[] { vao, vbo, ebo };
+    }
+
+    public int[] CreateVerts(float[] vertices, ShaderProgram shader, uint[] indices = null, BufferUsageHint drawType = BufferUsageHint.StaticDraw) {
+        int vao, vbo;
+        int ebo = 0;
+
+        vao = GL.GenVertexArray();
+        GL.BindVertexArray(vao);
+
+        vbo = GL.GenBuffer();
+        GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
+        GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * sizeof(float), vertices, drawType);
+
+        if (indices != null) {
+            ebo = GL.GenBuffer();
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, ebo);
+            GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(uint), indices, drawType);
+        }
+
+        shader.Use();
+
+        var vertexLocation = shader.GetAttribLocation("aPosition");
+        GL.EnableVertexAttribArray(vertexLocation);
+        GL.VertexAttribPointer(vertexLocation, 2, VertexAttribPointerType.Float, false, 2 * sizeof(float), 0);
+
+        GL.BindVertexArray(0);
+        GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+
+        shader.Unbind();
+
         return new int[] { vao, vbo, ebo };
     }
 
     public void DisposeBuffers(int[] buffers) {
         GL.DeleteVertexArray(buffers[0]);
         GL.DeleteBuffer(buffers[1]);
-        GL.DeleteBuffer(buffers[2]);
+        if (buffers.Length > 2 && buffers[2] > 0)
+            GL.DeleteBuffer(buffers[2]);
+    }
+
+    public void DrawArrayLines(int vao, int count = 2) {
+        GL.BindVertexArray(vao);
+        GL.DrawArrays(PrimitiveType.Lines, 0, count);
+        GL.BindVertexArray(0);
+    }
+
+    public void DrawLines(int vao, uint[] indices) {
+        GL.BindVertexArray(vao);
+        GL.DrawElements(PrimitiveType.Lines, indices.Length, DrawElementsType.UnsignedInt, 0);
+        GL.BindVertexArray(0);
     }
 
     public void DrawTriangles(int vao, uint[] indices) {
         GL.BindVertexArray(vao);
         GL.DrawElements(PrimitiveType.Triangles, indices.Length, DrawElementsType.UnsignedInt, 0);
+        GL.BindVertexArray(0);
 
     }
 

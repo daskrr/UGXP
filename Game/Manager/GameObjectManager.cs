@@ -2,7 +2,7 @@
 
 namespace UGXP.Game.Manager;
 
-public class GameObjectManager
+internal class GameObjectManager
 {
     private static GameObjectManager Instance = null;
 
@@ -17,27 +17,38 @@ public class GameObjectManager
     public static void Subscribe(GameObject obj) {
         if (!obj || !obj.active) return;
 
-        // check so that we only subscribe the object if it wasn't subscribed already
-        if (!obj.isSubscribed) {
-            GameProcess.Main.updateManager.Add(obj);
-            GameProcess.Main.renderManager.Add(obj);
-            obj.isSubscribed = true;
-        }
+        // do this next frame as modifying anything at the wrong time can break things (specifically the collision manager)
+        ExecutionManager.DoNextFrame(() => {
+            // check so that we only subscribe the object if it wasn't subscribed already
+            if (!obj.isSubscribed) {
+                GameProcess.Main.updateManager.Add(obj);
+                GameProcess.Main.collisionManager.Add(obj);
+                GameProcess.Main.renderManager.Add(obj);
+
+                obj.isSubscribed = true;
+            }
+        });
 
         // still try to subscribe the children
         foreach (var child in obj)
             Subscribe(child);
     }
     public static void Update(GameObject obj) {
-        GameProcess.Main.updateManager.Update(obj);
-        GameProcess.Main.renderManager.Update(obj);
+        ExecutionManager.DoNextFrame(() => {
+            GameProcess.Main.updateManager.Update(obj);
+            GameProcess.Main.collisionManager.Update(obj);
+            GameProcess.Main.renderManager.Update(obj);
+        });
 
         foreach (var child in obj)
             Update(child);
     }
     public static void Unsubscribe(GameObject obj) {
-        GameProcess.Main.updateManager.Remove(obj);
-        GameProcess.Main.renderManager.Remove(obj);
+        ExecutionManager.DoNextFrame(() => {
+            GameProcess.Main.updateManager.Remove(obj);
+            GameProcess.Main.collisionManager.Remove(obj);
+            GameProcess.Main.renderManager.Remove(obj);
+        });
 
         obj.isSubscribed = false;
 

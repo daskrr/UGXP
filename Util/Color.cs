@@ -1,8 +1,8 @@
 ﻿namespace UGXP.Util;
 public class Color
 {
-    public static readonly Color white = new Color(1,1,1, 1);
-    public static readonly Color black = new Color(0,0,0, 1);
+    public static Color white => new Color(1,1,1, 1);
+    public static Color black => new Color(0,0,0, 1);
 
     public float r;
     public float g;

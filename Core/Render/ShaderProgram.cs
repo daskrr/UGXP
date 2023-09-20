@@ -7,13 +7,28 @@ namespace UGXP.Core.Render;
 // https://github.com/opentk/LearnOpenTK/blob/master/Common/Shader.cs
 public class ShaderProgram
 {
-    public static readonly string[] defaultShaders = new string[] {
-        "UGXP.Core.Render.Shaders.defaultVertex.shader",
-        "UGXP.Core.Render.Shaders.defaultFrag.shader",
-    };
+    private static ShaderProgram defaultTex = null;
+    public static ShaderProgram DefaultTextureShared {
+        get {
+            defaultTex ??= new ShaderProgram(
+                "UGXP.Core.Render.Shaders.texDefaultVertex.shader", 
+                "UGXP.Core.Render.Shaders.texDefaultFrag.shader"
+            );
 
-    public static string GetEmbeddedResource(string filename)
-    {
+            return defaultTex;
+        }
+    }
+
+    public static ShaderProgram DefaultTexture => new ShaderProgram(
+        "UGXP.Core.Render.Shaders.texDefaultVertex.shader", 
+        "UGXP.Core.Render.Shaders.texDefaultFrag.shader"
+    );
+    public static ShaderProgram DefaultGizmos => new ShaderProgram(
+        "UGXP.Core.Render.Shaders.gizmosDefaultVertex.shader",
+        "UGXP.Core.Render.Shaders.gizmosDefaultFrag.shader"
+    );
+
+    private static string GetEmbeddedResource(string filename) {
         var assembly = Assembly.GetExecutingAssembly();
 
         using (Stream stream = assembly.GetManifestResourceStream(filename))
@@ -27,8 +42,6 @@ public class ShaderProgram
     public readonly int Handle;
 
     private readonly Dictionary<string, int> _uniformLocations;
-
-    public ShaderProgram() : this(defaultShaders[0], defaultShaders[1], true) { }
 
     // This is how you create a simple shader.
     // Shaders are written in GLSL, which is a language very similar to C in its semantics.
@@ -144,6 +157,15 @@ public class ShaderProgram
     public void Use()
     {
         GL.UseProgram(Handle);
+    }
+
+    public void Unbind() {
+        GL.UseProgram(0);
+    }
+
+    public void Delete()
+    {
+        GL.DeleteProgram(Handle);
     }
 
     // The shader sources provided with this project use hardcoded layout(location)-s. If you want to do it dynamically,

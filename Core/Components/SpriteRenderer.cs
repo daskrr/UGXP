@@ -1,8 +1,6 @@
 ﻿using OpenTK.Mathematics;
-using UGXP.Assets;
 using UGXP.Core.Render;
 using UGXP.Game;
-using UGXP.Reference;
 using UGXP.Util;
 
 namespace UGXP.Core.Components;
@@ -46,15 +44,15 @@ public class SpriteRenderer : Renderer
 	private ShaderProgram shader;
 
 	private void Start() {
-		shader = new ShaderProgram();
+		shader = ShaderProgram.DefaultTextureShared; // TODO test extensively to see if using a shared shader is a good idea
 		InitSprite();
 	}
 
 	private void InitSprite() {
 		if (buffers != null)
-			GameProcess.Main.Context.DisposeBuffers(buffers);
+			GameProcess.Context.DisposeBuffers(buffers);
 
-		buffers = GameProcess.Main.Context.CreateVerticesBuffers(GetVertices(), indices, shader);
+		buffers = GameProcess.Context.CreateTexVerts(GetVertices(), indices, shader);
 	}
 
 	// the vertices tex coords are wrong as well as the size of the sprite i think
@@ -91,15 +89,6 @@ public class SpriteRenderer : Renderer
 		return new float[][] { cRT, cRB, cLB, cLT };
 	}
 
-	//internal Vector2[] GetExtents() {
-	//	Vector2[] ret = new Vector2[4];
-	//	ret[0] = transform.TransformPoint(bounds.left, bounds.top);
-	//	ret[1] = transform.TransformPoint(bounds.right, bounds.top);
-	//	ret[2] = transform.TransformPoint(bounds.right, bounds.bottom);
-	//	ret[3] = transform.TransformPoint(bounds.left, bounds.bottom);
-	//	return ret;
-	//}
-
     internal override void Render() {
 		Sprite.texture.Bind();
         shader.Use();
@@ -112,10 +101,18 @@ public class SpriteRenderer : Renderer
         shader.SetMatrix4("view", Camera.Main.GetViewMatrix());
         shader.SetMatrix4("projection", Camera.Main.GetOrthographicProjection());
 
-		GameProcess.Main.Context.DrawTriangles(buffers[0], indices);
+		GameProcess.Context.DrawTriangles(buffers[0], indices);
 
 		BlendMode.NORMAL.enable();
 
+		shader.Unbind();
 		Sprite.texture.Unbind();
 	}
+
+    public override void OnDestroy() {
+        base.OnDestroy();
+
+		shader.Delete();
+		GameProcess.Context.DisposeBuffers(buffers);
+    }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
+using UGXP.Util;
 
 namespace UGXP.Reference;
 
@@ -63,7 +64,7 @@ public class ReferenceManager
             if (reference.Key.name == referenceName)
                 return (T) reference.Value;
 
-        throw new Exception("The reference name provided does not exist!");
+        return DevelopmentHandlers.HandleValueNotFound<T>("The reference name provided does not exist!");
     }
     /// <summary>
     /// Retrieves the referenceable object that corresponds to the id
@@ -77,7 +78,7 @@ public class ReferenceManager
             if (reference.Key.id == referenceId)
                 return (T) reference.Value;
 
-        throw new Exception("The reference id provided does not exist!");
+        return DevelopmentHandlers.HandleValueNotFound<T>("The reference id provided does not exist!");
     }
 
     /// <summary>

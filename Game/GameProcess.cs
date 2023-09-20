@@ -2,6 +2,7 @@
 using UGXP.Core;
 using UGXP.Core.Render;
 using UGXP.Game.Manager;
+using UGXP.Tools;
 
 namespace UGXP.Game;
 
@@ -29,19 +30,24 @@ public class GameProcess
             return (GameSettings) _settings.Clone();
         }
     }
+    public readonly DeveloperSettings devSettings;
 
-    internal GLContext Context;
+    internal static GLContext Context;
     public Vector2i ScreenSize;
     
+    internal ExecutionManager execManager;
+
     internal GameObjectManager gameObjectManager;
 
     internal UpdateManager updateManager;
     internal RenderManager renderManager;
+    internal CollisionManager collisionManager;
     internal SceneManager sceneManager;
 
-    public GameProcess(GameSettings settings) {
+    public GameProcess(GameSettings settings, DeveloperSettings devSettings = null) {
         Main = this;
         this._settings = settings;
+        this.devSettings = devSettings ?? new DeveloperSettings();
 
         // initialize managers not dependent on gl or game processes
         LayerManager.Initialize(settings.Layers, settings.SortingLayers);
@@ -57,11 +63,16 @@ public class GameProcess
             settings.WindowSize
         );
 
+        Gizmos.Initialize();
+
         CursorSetup();
+
+        execManager = new ExecutionManager();
 
         gameObjectManager = new GameObjectManager();
         updateManager = new UpdateManager();
         renderManager = new RenderManager();
+        collisionManager = new CollisionManager();
         sceneManager = new SceneManager();
     }
 
@@ -115,11 +126,19 @@ public class GameProcess
 
     // this looks weird now, but once more managers are introduced it will make sense
     internal void Step() {
+        // execute the previous next frame queue
+        execManager.InvokeQueue();
+
         updateManager.BeforeStep();
 
         updateManager.Step();
+        collisionManager.Step();
+        execManager.Step();
 
         updateManager.AfterStep();
+
+        // end of frame
+        execManager.AfterStep();
     }
 
     internal void Render() {

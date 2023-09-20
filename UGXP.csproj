@@ -9,13 +9,23 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Core\Render\Shaders\defaultFrag.shader" />
-    <None Remove="Core\Render\Shaders\defaultVertex.shader" />
+    <Compile Remove="CGALDotNet\**" />
+    <EmbeddedResource Remove="CGALDotNet\**" />
+    <None Remove="CGALDotNet\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Core\Render\Shaders\defaultFrag.shader" />
-    <EmbeddedResource Include="Core\Render\Shaders\defaultVertex.shader" />
+    <None Remove="Core\Render\Shaders\gizmosDefaultFrag.shader" />
+    <None Remove="Core\Render\Shaders\gizmosDefaultVertex.shader" />
+    <None Remove="Core\Render\Shaders\texDefaultFrag.shader" />
+    <None Remove="Core\Render\Shaders\texDefaultVertex.shader" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Core\Render\Shaders\gizmosDefaultFrag.shader" />
+    <EmbeddedResource Include="Core\Render\Shaders\texDefaultFrag.shader" />
+    <EmbeddedResource Include="Core\Render\Shaders\gizmosDefaultVertex.shader" />
+    <EmbeddedResource Include="Core\Render\Shaders\texDefaultVertex.shader" />
   </ItemGroup>
 
   <ItemGroup>
@@ -28,6 +38,13 @@
 
   <ItemGroup>
     <Folder Include="Util\Extension\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="differSAT2D">
+      <HintPath>..\sat\bin\Debug\differSAT2D.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
   </ItemGroup>
 
 </Project>

@@ -59,8 +59,6 @@ public class Component : Object, IComponentHolder, IReferenceable<Component>
 
     //public virtual void LateUpdate() { }
 
-    //public virtual void Destroy() { }
-
     //public virtual void OnGizmosDraw() { }
 
     // components are supposed to be referenceable, however in order for everything to work smoothly,
