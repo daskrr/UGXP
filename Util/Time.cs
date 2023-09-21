@@ -5,7 +5,7 @@ namespace UGXP {
     /// Contains various time related functions.
     /// </summary>
     public class Time {
-        private static int previousTime;
+        private static float previousTime;
 
         static Time() {
         }
@@ -13,8 +13,8 @@ namespace UGXP {
         /// <summary>
         /// Returns the current system time in milliseconds
         /// </summary>
-        public static int now {
-            get { return System.Environment.TickCount; }
+        public static float now {
+            get { return System.Environment.TickCount / 1000f; }
         }
 
         /// <summary>
@@ -23,8 +23,8 @@ namespace UGXP {
         /// <value>
         /// The time.
         /// </value>
-        public static int time {
-            get { return (int)(Glfw.Time * 1000); }
+        public static float time {
+            get { return (float) Glfw.Time; }
         }
 
         /// <summary>
@@ -33,8 +33,8 @@ namespace UGXP {
         /// <value>
         /// The delta time.
         /// </value>
-        private static int previousFrameTime;
-        public static int deltaTime {
+        private static float previousFrameTime;
+        public static float deltaTime {
             get {
                 return previousFrameTime;
             }

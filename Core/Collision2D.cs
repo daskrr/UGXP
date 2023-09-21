@@ -1,7 +1,7 @@
 ﻿using UGXP.Core.Components;
 
 namespace UGXP.Core;
-public class Collision
+public class Collision2D
 {
     /// <summary>
     /// The incoming collider involved in the collision with <see cref="otherCollider"/>
@@ -12,7 +12,7 @@ public class Collision
     /// </summary>
     public Collider otherCollider;
 
-    internal Collision(Collider collider, Collider otherCollider) {
+    internal Collision2D (Collider collider, Collider otherCollider) {
         this.collider = collider;
         this.otherCollider = otherCollider;
     }

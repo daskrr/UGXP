@@ -33,8 +33,8 @@ internal abstract class Context
     public bool cursorLockedInWindow = false;
 
     protected int targetFrameRate = 240;
-    protected long lastFrameTime = 0;
-    protected long lastFPSTime = 0;
+    protected float lastFrameTime = 0;
+    protected float lastFPSTime = 0;
     protected int frameCount = 0;
     protected int lastFPS = 0;
     protected bool vsync = false;

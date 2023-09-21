@@ -9,7 +9,7 @@ public class CircleCollider : Collider
     ///// </summary>
     //internal CircleBounds Bounds; // MIGHT NOT BE USEFUL SINCE WE HAVE THE DIFFER SHAPE (which acts as bounds)
 
-    private float radius;
+    private float radius = 1;
     /// <summary>
     /// The radius of the circle
     /// </summary>

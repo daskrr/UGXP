@@ -45,6 +45,51 @@ internal class Program {
             }
         });
 
+        game.SetScenes(new SceneStructure[] {
+            new SceneStructure {
+                Name = "TestScene",
+                Objects = new GameObjectStructure[] {
+                    new GameObjectStructure {
+                        Name = "Camera",
+                        Transform = new Transform {
+                            position = new Vector2(0,0)
+                        },
+                        Components = new LazyComponent[] {
+                            Component.Create<Camera>(camera => {
+                                camera.orthographicSize = 7f;
+                            })
+                        }
+                    },
+                    new GameObjectStructure {
+                        Name = "GameObject wall",
+                        Transform = new Transform() {
+                            position = new Vector2(10f,0f)
+                        },
+                        Components = new LazyComponent[] {
+                            Component.Create<BoxCollider>(c => {
+                                c.Size = new Vector2(1f, 12f);
+                            })
+                        }
+                    },
+                    new GameObjectStructure {
+                        Name = "GameObject sprite test & collisions",
+                        Transform = new Transform() {
+                            position = new Vector2(0,1)
+                        },
+                        Components = new LazyComponent[] {
+                            Component.Create<SpriteRenderer>(spriteRenderer => {
+                                spriteRenderer.Sprite = AssetManager.Get<Sprite>("Player", "Idle0");
+                            }),
+                            Component.Create<CircleCollider>(c => {
+
+                            }),
+                            Component.Create<ComponentTest>()
+                        }
+                    }
+                }
+            }
+        });
+
         //game.SetScenes(new SceneStructure[] {
         //    new SceneStructure {
         //        Name = "TestScene",
@@ -64,89 +109,89 @@ internal class Program {
         //    }
         //});
 
-        game.SetScenes(new SceneStructure[] {
-            new SceneStructure {
-                Name = "TestScene",
-                Objects = new GameObjectStructure[] {
-                    new GameObjectStructure {
-                        Name = "Camera",
-                        Transform = new Transform {
-                            position = new Vector2(0,0)
-                        },
-                        Components = new LazyComponent[] {
-                            Component.Create<Camera>(camera => {
-                                camera.orthographicSize = 7f;
-                            })
-                        }
-                    },
-                    new GameObjectStructure {
-                        Name = "Parent GO",
-                        Transform = new Transform {
-                            position = new Vector2(0, 0),
-                            rotation = new OpenTK.Mathematics.Vector3(0,0,0),
-                            scale = new Vector2(1, 2)
-                        },
-                        Children = new GameObjectStructure[] {
-                            new GameObjectStructure {
-                                Name = "GameObject child test",
-                                Transform = new Transform() {
-                                    position = new Vector2(0,1),
-                                    rotation = new OpenTK.Mathematics.Vector3(0,0,0),
-                                    scale = new Vector2(2, 1)
-                                },
-                                Components = new LazyComponent[] {
-                                    Component.Create<SpriteRenderer>(spriteRenderer => {
-                                        spriteRenderer.Sprite = AssetManager.Get<Sprite>("Player", "Idle0");
-                                        spriteRenderer.color = new Color32(125, 20, 40, 255);
-                                    })
-                                }
-                            }
-                        }
-                    },
-                    new GameObjectStructure {
-                        Name = "GameObject rhino behind",
-                        Transform = new Transform() {
-                            position = new Vector2(0,0),
-                            rotation = new OpenTK.Mathematics.Vector3(45,45,45),
-                        },
-                        Components = new LazyComponent[] {
-                            Component.Create<SpriteRenderer>(spriteRenderer => {
-                                spriteRenderer.Sprite = AssetManager.Get<Sprite>("TestTexture");
-                                spriteRenderer.sortingLayer = SortingLayer.NameToId("Default");
-                            })
-                        }
-                    },
-                    new GameObjectStructure {
-                        Name = "GameObject player test",
-                        Transform = new Transform() {
-                            position = new Vector2(0,0),
-                            rotation = new OpenTK.Mathematics.Vector3(0,45f,0),
-                            scale = new Vector2(1, 1)
-                        },
-                        Components = new LazyComponent[] {
-                            Component.Create<SpriteRenderer>(spriteRenderer => {
-                                spriteRenderer.Sprite = AssetManager.Get<Sprite>("Player", "Idle0");
-                                spriteRenderer.color = new Color32(255, 255, 255, 255);
-                                spriteRenderer.sortingLayer = SortingLayer.NameToId("layer2");
-                            })
-                        }
-                    },
-                    new GameObjectStructure {
-                        Name = "GameObject rhino unmodified",
-                        Transform = new Transform() {
-                            position = new Vector2(1,0),
-                            rotation = new OpenTK.Mathematics.Vector3(45,45,45),
-                        },
-                        Components = new LazyComponent[] {
-                            Component.Create<SpriteRenderer>(spriteRenderer => {
-                                spriteRenderer.Sprite = AssetManager.Get<Sprite>("TestTexture");
-                                spriteRenderer.sortingLayer = SortingLayer.NameToId("layer1");
-                            })
-                        }
-                    }
-                }
-            }
-        });
+        //game.SetScenes(new SceneStructure[] {
+        //    new SceneStructure {
+        //        Name = "TestScene",
+        //        Objects = new GameObjectStructure[] {
+        //            new GameObjectStructure {
+        //                Name = "Camera",
+        //                Transform = new Transform {
+        //                    position = new Vector2(0,0)
+        //                },
+        //                Components = new LazyComponent[] {
+        //                    Component.Create<Camera>(camera => {
+        //                        camera.orthographicSize = 7f;
+        //                    })
+        //                }
+        //            },
+        //            new GameObjectStructure {
+        //                Name = "Parent GO",
+        //                Transform = new Transform {
+        //                    position = new Vector2(0, 0),
+        //                    rotation = new OpenTK.Mathematics.Vector3(0,0,0),
+        //                    scale = new Vector2(1, 2)
+        //                },
+        //                Children = new GameObjectStructure[] {
+        //                    new GameObjectStructure {
+        //                        Name = "GameObject child test",
+        //                        Transform = new Transform() {
+        //                            position = new Vector2(0,1),
+        //                            rotation = new OpenTK.Mathematics.Vector3(0,0,0),
+        //                            scale = new Vector2(2, 1)
+        //                        },
+        //                        Components = new LazyComponent[] {
+        //                            Component.Create<SpriteRenderer>(spriteRenderer => {
+        //                                spriteRenderer.Sprite = AssetManager.Get<Sprite>("Player", "Idle0");
+        //                                spriteRenderer.color = new Color32(125, 20, 40, 255);
+        //                            })
+        //                        }
+        //                    }
+        //                }
+        //            },
+        //            new GameObjectStructure {
+        //                Name = "GameObject rhino behind",
+        //                Transform = new Transform() {
+        //                    position = new Vector2(0,0),
+        //                    rotation = new OpenTK.Mathematics.Vector3(45,45,45),
+        //                },
+        //                Components = new LazyComponent[] {
+        //                    Component.Create<SpriteRenderer>(spriteRenderer => {
+        //                        spriteRenderer.Sprite = AssetManager.Get<Sprite>("TestTexture");
+        //                        spriteRenderer.sortingLayer = SortingLayer.NameToId("Default");
+        //                    })
+        //                }
+        //            },
+        //            new GameObjectStructure {
+        //                Name = "GameObject player test",
+        //                Transform = new Transform() {
+        //                    position = new Vector2(0,0),
+        //                    rotation = new OpenTK.Mathematics.Vector3(0,45f,0),
+        //                    scale = new Vector2(1, 1)
+        //                },
+        //                Components = new LazyComponent[] {
+        //                    Component.Create<SpriteRenderer>(spriteRenderer => {
+        //                        spriteRenderer.Sprite = AssetManager.Get<Sprite>("Player", "Idle0");
+        //                        spriteRenderer.color = new Color32(255, 255, 255, 255);
+        //                        spriteRenderer.sortingLayer = SortingLayer.NameToId("layer2");
+        //                    })
+        //                }
+        //            },
+        //            new GameObjectStructure {
+        //                Name = "GameObject rhino unmodified",
+        //                Transform = new Transform() {
+        //                    position = new Vector2(1,0),
+        //                    rotation = new OpenTK.Mathematics.Vector3(45,45,45),
+        //                },
+        //                Components = new LazyComponent[] {
+        //                    Component.Create<SpriteRenderer>(spriteRenderer => {
+        //                        spriteRenderer.Sprite = AssetManager.Get<Sprite>("TestTexture");
+        //                        spriteRenderer.sortingLayer = SortingLayer.NameToId("layer1");
+        //                    })
+        //                }
+        //            }
+        //        }
+        //    }
+        //});
         game.Start();
     }
 }

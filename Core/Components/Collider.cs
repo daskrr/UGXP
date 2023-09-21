@@ -34,7 +34,7 @@ public class Collider : Component
         set {
             offset = value;
 
-            // update shape
+            // update shapes
             if (diffShapes.Length > 0 && transform != null)
                 foreach (var shape in diffShapes) {
                     shape.x = transform.position.x + offset.x;
@@ -47,4 +47,13 @@ public class Collider : Component
     /// The Differ shapes for the SAT collision detection algorithm
     /// </summary>
     internal Shape[] diffShapes;
+
+    protected void Update() {
+        // update the shapes position to this frame's transform position
+        if (diffShapes.Length > 0 && transform != null)
+            foreach (var shape in diffShapes) {
+                shape.x = transform.position.x + offset.x;
+                shape.y = transform.position.y + offset.y;
+            }
+    }
 }

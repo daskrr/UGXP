@@ -150,7 +150,9 @@ public class Component : Object, IComponentHolder, IReferenceable<Component>
     /// <typeparam name="T">The component type</typeparam>
     /// <param name="initializer">The initializer function</param>
     /// <returns>The LazyComponent that will be used every time a scene is loaded to generate a new component</returns>
-    public static LazyComponent<T> Create<T>(Action<T> initializer) where T : Component {
+    public static LazyComponent<T> Create<T>(Action<T> initializer = null) where T : Component {
+        initializer ??= _ => { };
+
         return new LazyComponent<T>(_ => { }, initializer);
     }
     /// <summary>

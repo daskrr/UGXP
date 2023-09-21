@@ -1,4 +1,5 @@
 ﻿using Differ.Shapes;
+using UGXP.Tools;
 
 namespace UGXP.Core.Components;
 public class BoxCollider : Collider
@@ -44,5 +45,15 @@ public class BoxCollider : Collider
                 size.y
             )
         };
+    }
+
+    private void OnGizmosDraw() {
+        if (diffShapes.Length == 0)
+            return;
+
+        Vector2 corner1 = new((diffShapes[0] as Polygon).transformedVertices[0].x, (diffShapes[0] as Polygon).transformedVertices[0].y);
+        Vector2 corner2 = new((diffShapes[0] as Polygon).transformedVertices[2].x, (diffShapes[0] as Polygon).transformedVertices[2].y);
+
+        Gizmos.DrawRect(corner1, corner2);
     }
 }

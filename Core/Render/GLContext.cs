@@ -197,12 +197,12 @@ internal class GLContext : Context
         do {
             HandleCursorLock();
 
-            if (vsync || Time.time - lastFrameTime > 1000 / targetFrameRate) {
+            if (vsync || Time.time - lastFrameTime > 1 / targetFrameRate) {
                 lastFrameTime = Time.time;
 
                 frameCount++;
-                if (Time.time - lastFPSTime > 1000) {
-                    lastFPS = (int)(frameCount / ((Time.time - lastFPSTime) / 1000.0f));
+                if (Time.time - lastFPSTime > 1) {
+                    lastFPS = (int)(frameCount / ((Time.time - lastFPSTime) / 1f));
                     lastFPSTime = Time.time;
                     frameCount = 0;
                 }
