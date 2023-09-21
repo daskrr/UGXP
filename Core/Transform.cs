@@ -8,18 +8,48 @@ public class Transform
 
     protected Vector2 _position = Vector2.zero;
 
-	// TODO change this to global position by default and create a localPosition field
+	// TODO this vector is local and doesnt actually update position when using .x or .y so idk what the hell to do
+	// (maybe update both local and global position when either is set and just use the local pos when calculating the matrices - since both are updated)
+
+	// TODO change the setting of this to calculate the global position and properly set the local pos so that this object is
+	// properly positioned in the local space to account for the world position given to it
     /// <summary>
-    /// The current local vector2 position of this Transform
+    /// The current world vector2 position of this Transform<br/>
+	/// Setting this will set the local position of the object.
     /// </summary>
     public Vector2 position {
         get {
-            return _position;
+			// we default to local position in the case that the game object wasn't set yet
+			if (gameObject == null)
+				return _position;
+			
+			// recalculate the matrix to only use the parent's matrix as we already have our own position (and it causes a stack overflow :D)
+			Matrix4 mat4 = scaleMatrix * rotationMatrix;
+			if (gameObject.parent != null)
+				mat4 *= gameObject.parent.transform.translationMatrix;
+
+			Vector4 pos4 = _position.ToTKVec4();
+			pos4 *= mat4;
+
+            return Vector2.FromTKVec4(pos4);
         }
         set {
             _position = value;
         }
     }
+
+	/// <summary>
+    /// The current world vector2 position of this Transform<br/>
+	/// Setting this will set the local position of the object.
+    /// </summary>
+	public Vector2 localPosition {
+		get {
+			return _position;
+		}
+		set {
+			_position = value;
+		}
+	}
 
     /// <summary>
     /// The current rotation of this Transformable in degrees
@@ -61,7 +91,7 @@ public class Transform
 			if (gameObject.parent)
 				matrix = gameObject.parent.transform.translationMatrix;
 
-			matrix *= Matrix4.CreateTranslation(position.x, position.y, position.z);
+			matrix *= Matrix4.CreateTranslation(localPosition.x, localPosition.y, localPosition.z);
 			// adding z just in case it is ever used internally (should be 0) (does not change sorting layer or order!)
 
 			return matrix;
@@ -199,6 +229,6 @@ public class Transform
 	//}
 
 	public Transform Clone() {
-		return new Transform() { gameObject = gameObject, position = position, rotation = rotation, scale = scale };
+		return new Transform() { gameObject = gameObject, position = localPosition, rotation = rotation, scale = scale };
 	}
 }

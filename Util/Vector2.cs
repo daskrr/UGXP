@@ -144,6 +144,26 @@ namespace UGXP {
             return new OpenTK.Mathematics.Vector4i((int) x, (int) y, (int) z, 1);
         }
 
+        internal static Vector2 FromTKVec2(OpenTK.Mathematics.Vector2 vec) {
+            return new Vector2(vec.X, vec.Y);
+        }
+        internal static Vector2 FromTKVec2i(OpenTK.Mathematics.Vector2i vec) {
+            return new Vector2(vec.X, vec.Y);
+        }
+        internal static Vector2 FromTKVec3(OpenTK.Mathematics.Vector3 vec) {
+            return new Vector2(vec.X, vec.Y);
+        }
+        internal static Vector2 FromTKVec3i(OpenTK.Mathematics.Vector3 vec) {
+            return new Vector2(vec.X, vec.Y);
+        }
+
+        internal static Vector2 FromTKVec4(OpenTK.Mathematics.Vector4 vec) {
+            return new Vector2(vec.X, vec.Y);
+        }
+        internal static Vector2 FromTKVec4i(OpenTK.Mathematics.Vector4 vec) {
+            return new Vector2(vec.X, vec.Y);
+        }
+
         // overrides
 
         public override bool Equals(object? obj) {
